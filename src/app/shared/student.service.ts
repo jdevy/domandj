@@ -1,0 +1,44 @@
+import { Injectable } from '@angular/core';
+import { FormGroup, FormControl, Validators } from '@angular/forms';
+import { AngularFireDatabase, AngularFireList } from 'angularfire2/database';
+
+@Injectable({
+  providedIn: 'root'
+})
+export class StudentService {
+
+  constructor(private firebase: AngularFireDatabase) { }
+  studentList: AngularFireList<any>;
+
+  form: FormGroup = new FormGroup({
+    $key: new FormControl(null),
+    lastName: new FormControl('', Validators.required),
+    firstName: new FormControl(''),
+    mobile: new FormControl('', Validators.minLength(8)),
+    email: new FormControl('', Validators.email)
+  })
+
+  getStudents() {
+    this.studentList = this.firebase.list('students');
+    return this.studentList.snapshotChanges();
+  }
+
+  insertStudent(student) {
+      this.studentList.push({
+        lastName: student.lastName,
+        firstName: student.firstName,
+        mobile: student.mobile,
+        email: student.email
+    })
+  }
+
+  initializeFormGroup() {
+    this.form.setValue({
+      $key: null,
+      lastName: '',
+      firstName: '',
+      mobile: '',
+      email: ''
+    });
+  }
+}
