@@ -11,7 +11,11 @@ import * as Material from "@angular/material";
     Material.MatInputModule,
     Material.MatButtonModule,
     Material.MatTableModule,
-    Material.MatIconModule
+    Material.MatIconModule,
+    Material.MatPaginatorModule,
+    Material.MatSortModule,
+    Material.MatSnackBarModule,
+    Material.MatDialogModule
   ],
   exports: [
     Material.MatToolbarModule,
@@ -20,7 +24,11 @@ import * as Material from "@angular/material";
     Material.MatInputModule,
     Material.MatButtonModule,
     Material.MatTableModule,
-    Material.MatIconModule
+    Material.MatIconModule,
+    Material.MatPaginatorModule,
+    Material.MatSortModule,
+    Material.MatSnackBarModule,
+    Material.MatDialogModule
   ],
   declarations: []
 })

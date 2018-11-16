@@ -15,13 +15,15 @@ import { StudentService } from './shared/student.service';
 
 import { environment } from '../environments/environment';
 import { StudentListComponent } from './students/student-list/student-list.component';
+import { ConfirmDialogComponent } from './confirm-dialog/confirm-dialog.component';
 
 @NgModule({
   declarations: [
     AppComponent,
     StudentsComponent,
     StudentComponent,
-    StudentListComponent
+    StudentListComponent,
+    ConfirmDialogComponent
   ],
   imports: [
     BrowserModule,
@@ -33,6 +35,7 @@ import { StudentListComponent } from './students/student-list/student-list.compo
     AngularFireDatabaseModule
   ],
   providers: [StudentService],
-  bootstrap: [AppComponent]
+  bootstrap: [AppComponent],
+  entryComponents: [StudentComponent, ConfirmDialogComponent]
 })
 export class AppModule { }

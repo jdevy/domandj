@@ -24,12 +24,26 @@ export class StudentService {
   }
 
   insertStudent(student) {
-      this.studentList.push({
+    this.studentList.push({
+      lastName: student.lastName,
+      firstName: student.firstName,
+      mobile: student.mobile,
+      email: student.email
+    })
+  }
+
+  updateStudent(student) {
+    this.studentList.update(student.$key,
+      {
         lastName: student.lastName,
         firstName: student.firstName,
         mobile: student.mobile,
         email: student.email
-    })
+      })
+  }
+
+  deleteStudent($key: string) {
+    this.studentList.remove($key);
   }
 
   initializeFormGroup() {
@@ -41,4 +55,9 @@ export class StudentService {
       email: ''
     });
   }
+
+  populateForm(student) {
+    this.form.setValue(student);
+  }
+
 }
