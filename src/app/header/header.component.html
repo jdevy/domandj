@@ -1,0 +1,58 @@
+<!-- <div fxLayout="column" fxFlex>
+
+  <mat-sidenav-container fxFlex> -->
+
+    <!-- <mat-sidenav #sidenav mode="side">
+      <mat-toolbar class="color-menu">
+        <span class="toolbar-filler"></span>
+        <button mat-icon-button (click)="sidenav.toggle();toggleMenu = !toggleMenu" class="md-icon-button sidenav-toggle-button"
+          [hidden]="!sidenav.opened">
+          <mat-icon aria-label="Menu" class="material-icons">arrow_back_ios</mat-icon>
+        </button>
+      </mat-toolbar>
+
+      <div class="name-container">
+        <div *ngIf="isAuthenticated">
+          <div>Welcome toto</div>
+        </div>
+      </div>
+
+      <mat-nav-list>
+        <a mat-list-item *ngFor="let link of links" [routerLink]="[link.path]" (click)="sidenav.toggle();toggleMenu = !toggleMenu">
+          <mat-icon matListIcon>{{link.icon}}</mat-icon>
+          <span>{{link.label}}</span>
+        </a>
+      </mat-nav-list>
+    </mat-sidenav>
+ -->
+
+    <mat-toolbar-row>
+
+      <!-- <div *ngIf='!toggleMenu'>
+        <button mat-icon-button (click)="sidenav.toggle();toggleMenu = !toggleMenu" class="md-icon-button sidenav-toggle-button"
+          [hidden]="sidenav.opened">
+          <mat-icon aria-label="Menu" class="material-icons">menu</mat-icon>
+        </button>
+      </div> -->
+      <span>&nbsp;Domandj</span>
+      <!-- Filler that pushes the menu button to the end of the toolbar -->
+      <span fxFlex></span>
+
+      <div *ngIf="isAuthenticated">
+        <button mat-icon-button>
+          <mat-icon>person</mat-icon>
+        </button>
+        <span>toto</span>
+      </div>
+      <div *ngIf="!isAuthenticated">
+        <button mat-menu-item [routerLink]="['auth/signin']">SIGN IN</button>
+        <button mat-menu-item [routerLink]="['auth/signup']">SIGN UP</button>
+      </div>
+      <div *ngIf="isAuthenticated">
+        <button mat-menu-item (click)="onSignOut()" style="cursor:pointer">Logout</button>
+      </div>
+
+    </mat-toolbar-row>
+
+  <!-- </mat-sidenav-container>
+</div> -->

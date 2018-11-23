@@ -3,11 +3,14 @@ import { NgModule } from '@angular/core';
 
 import { AngularFireModule } from 'angularfire2';
 import { AngularFireDatabaseModule } from 'angularfire2/database';
+import { RouterModule, Routes } from '@angular/router';
+import { AngularFireAuthModule } from 'angularfire2/auth';
+
 
 import { AppComponent } from './app.component';
 import { StudentsComponent } from './students/students.component';
 import { StudentComponent } from './students/student/student.component';
-import { MaterialModule } from './material/material.module';
+//import { MaterialModule } from './material/material.module';
 import { ReactiveFormsModule } from '@angular/forms';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { FlexLayoutModule } from '@angular/flex-layout';
@@ -16,6 +19,25 @@ import { StudentService } from './shared/student.service';
 import { environment } from '../environments/environment';
 import { StudentListComponent } from './students/student-list/student-list.component';
 import { ConfirmDialogComponent } from './confirm-dialog/confirm-dialog.component';
+import { GroupComponent } from './groups/group/group.component';
+import { GroupsComponent } from './groups/groups.component';
+import { GroupListComponent } from './groups/group-list/group-list.component';
+import { GroupService } from './shared/group.service';
+import { HomeComponent } from './home/home.component';
+import { SignupComponent } from './auth/signup/signup.component';
+import { SigninComponent } from './auth/signin/signin.component';
+import { AuthGuardService } from './shared/auth-guard.service';
+import { AuthService } from './shared/auth.service';
+import { HeaderComponent } from './header/header.component';
+import { SharedModule } from './shared/shared.module';
+
+const routes: Routes= [
+  { path: 'auth/signup', component: SignupComponent},
+  { path: 'auth/signin', component: SigninComponent},
+  { path: 'groups', canActivate: [AuthGuardService], component: GroupsComponent},
+  { path: '', redirectTo: 'groups', pathMatch: 'full'},
+  { path: '**', redirectTo: 'groups'}
+]
 
 @NgModule({
   declarations: [
@@ -23,19 +45,28 @@ import { ConfirmDialogComponent } from './confirm-dialog/confirm-dialog.componen
     StudentsComponent,
     StudentComponent,
     StudentListComponent,
-    ConfirmDialogComponent
+    ConfirmDialogComponent,
+    GroupComponent,
+    GroupsComponent,
+    GroupListComponent,
+    HomeComponent,
+    SignupComponent,
+    SigninComponent,
+    HeaderComponent
   ],
   imports: [
     BrowserModule,
-    MaterialModule,
     BrowserAnimationsModule,
     ReactiveFormsModule,
     FlexLayoutModule,
+    SharedModule,
     AngularFireModule.initializeApp(environment.firebaseConfig),
-    AngularFireDatabaseModule
+    AngularFireDatabaseModule,
+    AngularFireAuthModule,
+    RouterModule.forRoot(routes)
   ],
-  providers: [StudentService],
+  providers: [StudentService, GroupService, AuthService, AuthGuardService],
   bootstrap: [AppComponent],
-  entryComponents: [StudentComponent, ConfirmDialogComponent]
+  entryComponents: [StudentComponent, GroupComponent, ConfirmDialogComponent]
 })
 export class AppModule { }

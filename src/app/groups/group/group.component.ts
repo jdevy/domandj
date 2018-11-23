@@ -1,19 +1,19 @@
 import { Component, OnInit } from '@angular/core';
-import { StudentService } from '../../shared/student.service';
-import { MatDialogRef } from '@angular/material/dialog';
+import { GroupService } from '../../shared/group.service';
 import { NotificationService } from '../../shared/notification.service';
+import { MatDialogRef } from '@angular/material/dialog';
 
 @Component({
-  selector: 'app-student',
-  templateUrl: './student.component.html',
-  styleUrls: ['./student.component.css']
+  selector: 'app-group',
+  templateUrl: './group.component.html',
+  styleUrls: ['./group.component.css']
 })
+export class GroupComponent implements OnInit {
 
-export class StudentComponent implements OnInit {
 
-  constructor(private service: StudentService,
+  constructor(private service: GroupService,
     private notificationService: NotificationService,
-    public dialogRef: MatDialogRef<StudentComponent>) { }
+    public dialogRef: MatDialogRef<GroupComponent>) { }
 
   formControls = this.service.form.controls;
   showSuccessMessage: boolean;
@@ -24,9 +24,9 @@ export class StudentComponent implements OnInit {
   onSubmit() {
     if (this.service.form.valid) {
       if (!this.service.form.get('$key').value) {
-        this.service.insertStudent(this.service.form.value);
+        this.service.insertGroup(this.service.form.value);
       } else {
-        this.service.updateStudent(this.service.form.value);
+        this.service.updateGroup(this.service.form.value);
       }
       this.service.form.reset();
       this.service.initializeFormGroup();

@@ -1,0 +1,23 @@
+<mat-card>
+  <mat-card-title>PLEASE SIGN UP</mat-card-title>
+  <mat-card-content>
+    <form [formGroup]="signUpForm" (ngSubmit)="onSubmit()">
+      <p>
+        <mat-form-field fxFlex>
+          <input type="text" formControlName="email" matInput placeholder="E-mail">
+        </mat-form-field>
+      </p>
+      <p>
+        <mat-form-field fxFlex>
+          <input type="password" formControlName="password" matInput placeholder="Password">
+        </mat-form-field>
+      </p>
+      <p *ngIf="errorMessage">
+        {{ errorMessage }}
+      </p>
+      <p>
+        <button type="submit" mat-button md-raised-button fxFlex [disabled]="!signUpForm.valid || IsAccepted==0">Save</button>
+      </p>
+    </form>
+  </mat-card-content>
+</mat-card>
