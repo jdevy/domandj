@@ -15,7 +15,7 @@
         <p *ngIf="errorMessage">
           {{ errorMessage }}
         </p>
-        <p>
+        <p class="loginButtons">
           <button type="submit" mat-button md-raised-button fxFlex [disabled]="!signInForm.valid || signInForm.pending">Login</button>
         </p>
       </form>

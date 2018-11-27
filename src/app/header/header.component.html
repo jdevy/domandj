@@ -2,7 +2,7 @@
 
   <mat-sidenav-container fxFlex> -->
 
-    <!-- <mat-sidenav #sidenav mode="side">
+<!-- <mat-sidenav #sidenav mode="side">
       <mat-toolbar class="color-menu">
         <span class="toolbar-filler"></span>
         <button mat-icon-button (click)="sidenav.toggle();toggleMenu = !toggleMenu" class="md-icon-button sidenav-toggle-button"
@@ -26,24 +26,33 @@
     </mat-sidenav>
  -->
 
-    <mat-toolbar-row>
+<mat-toolbar color="primary">
+  <mat-toolbar-row>
 
-      <!-- <div *ngIf='!toggleMenu'>
+    <!-- <div *ngIf='!toggleMenu'>
         <button mat-icon-button (click)="sidenav.toggle();toggleMenu = !toggleMenu" class="md-icon-button sidenav-toggle-button"
           [hidden]="sidenav.opened">
           <mat-icon aria-label="Menu" class="material-icons">menu</mat-icon>
         </button>
       </div> -->
-      <span>&nbsp;Domandj</span>
-      <!-- Filler that pushes the menu button to the end of the toolbar -->
-      <span fxFlex></span>
+    <span>&nbsp;Domandj</span>
+    <!-- Filler that pushes the menu button to the end of the toolbar -->
+    <span fxFlex></span>
 
-      <div *ngIf="isAuthenticated">
-        <button mat-icon-button>
-          <mat-icon>person</mat-icon>
-        </button>
-        <span>toto</span>
-      </div>
+    <div *ngIf="isAuthenticated">
+      <button mat-icon-button>
+        <mat-icon>person</mat-icon>
+      </button>
+      <span>toto</span>
+    </div>
+      
+      <button mat-icon-button [matMenuTriggerFor]="themeMenu">
+        <mat-icon>more_vert</mat-icon>
+      </button>
+
+
+    <mat-menu #themeMenu x-position="before">
+
       <div *ngIf="!isAuthenticated">
         <button mat-menu-item [routerLink]="['auth/signin']">SIGN IN</button>
         <button mat-menu-item [routerLink]="['auth/signup']">SIGN UP</button>
@@ -51,8 +60,9 @@
       <div *ngIf="isAuthenticated">
         <button mat-menu-item (click)="onSignOut()" style="cursor:pointer">Logout</button>
       </div>
+    </mat-menu>
 
-    </mat-toolbar-row>
-
-  <!-- </mat-sidenav-container>
+  </mat-toolbar-row>
+</mat-toolbar>
+<!-- </mat-sidenav-container>
 </div> -->
