@@ -30,10 +30,13 @@ import { AuthGuardService } from './shared/auth-guard.service';
 import { AuthService } from './shared/auth.service';
 import { HeaderComponent } from './header/header.component';
 import { SharedModule } from './shared/shared.module';
+import { AuthComponent } from './auth/auth.component';
+import { AlertComponent } from './alert/alert.component';
 
 const routes: Routes= [
   { path: 'auth/signup', component: SignupComponent},
   { path: 'auth/signin', component: SigninComponent},
+  { path: 'auth', component: AuthComponent},
   { path: 'groups', canActivate: [AuthGuardService], component: GroupsComponent},
   { path: '', redirectTo: 'groups', pathMatch: 'full'},
   { path: '**', redirectTo: 'groups'}
@@ -52,7 +55,9 @@ const routes: Routes= [
     HomeComponent,
     SignupComponent,
     SigninComponent,
-    HeaderComponent
+    HeaderComponent,
+    AuthComponent,
+    AlertComponent
   ],
   imports: [
     BrowserModule,

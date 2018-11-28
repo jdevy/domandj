@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { FormGroup, Validators, FormBuilder } from '@angular/forms';
 import { AuthService } from '../../shared/auth.service';
 import { Router } from '@angular/router';
+import { AlertService } from 'src/app/alert/alert.service';
 
 @Component({
   selector: 'app-signin',
@@ -15,7 +16,8 @@ export class SigninComponent implements OnInit {
 
   constructor(private formBuilder: FormBuilder,
     private authService: AuthService,
-    private router: Router) { }
+    private router: Router,
+    private alertService: AlertService) { }
 
   ngOnInit() {
     this.initForm();
@@ -36,7 +38,8 @@ export class SigninComponent implements OnInit {
         this.router.navigate(['/groups', 'group']);
       },
       (error) => {
-        this.errorMessage = error;
+        this.alertService.error('login failed', false);
+        //this.errorMessage = error;
       }
     )
   }

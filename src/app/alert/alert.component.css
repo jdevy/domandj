@@ -1,0 +1,19 @@
+:host{
+    display: flex;
+    flex-flow: column;
+}
+
+.alert {
+    font-size: 18px;
+}
+
+.alert-success {
+    background-color: #76FF03;
+    color: #023df1;
+}
+
+.alert-danger {
+    background-color: red;
+    color: #fff;
+    opacity: 1;
+}

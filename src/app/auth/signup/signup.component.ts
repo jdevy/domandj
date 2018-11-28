@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { FormGroup, FormBuilder, Validators } from '@angular/forms';
 import { AuthService } from '../../shared/auth.service';
 import { Router } from '@angular/router';
+import { AlertService } from 'src/app/alert/alert.service';
 
 @Component({
   selector: 'app-signup',
@@ -15,7 +16,8 @@ export class SignupComponent implements OnInit {
 
   constructor(private formBuilder: FormBuilder,
     private authService: AuthService,
-    private router: Router) { }
+    private router: Router,
+    private alertService: AlertService) { }
 
   ngOnInit() {
     this.initForm();
@@ -33,10 +35,12 @@ export class SignupComponent implements OnInit {
     const password = this.signUpForm.get('password').value;
     this.authService.createNewUser(email, password).then(
       () => {
+        this.alertService.success('Registration successful', true);
         this.router.navigate(['auth/signin']);
       },
       (error) => {
-        this.errorMessage = error;
+        this.alertService.error(error);
+        //this.errorMessage = error;
       }
     )
   }
