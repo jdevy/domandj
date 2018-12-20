@@ -1,14 +1,8 @@
-<!-- desactivé parce que le sidenav ne semble pas bien se gérer sur plusieurs composants -->
+
+<!-- pas utilisé pour l'instant car ne parviens pas à propager l'ancre #sidebar sur plusieurs components -->
 
 <mat-toolbar color="primary">
   <mat-toolbar-row>
-
-    <div *ngIf='!toggleMenu'>
-      <button mat-icon-button (click)="sidenav.toggle();toggleMenu = !toggleMenu" class="md-icon-button sidenav-toggle-button"
-        [hidden]="sidenav.opened">
-        <mat-icon aria-label="Menu" class="material-icons">menu</mat-icon>
-      </button>
-    </div>
     <span>&nbsp;Domandj</span>
     <!-- Filler that pushes the menu button to the end of the toolbar -->
     <span fxFlex></span>

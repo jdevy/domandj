@@ -1,23 +1,8 @@
 <div fxLayout="column" fxFlex>
+
+  <!-- <app-header></app-header> -->
+
   <mat-sidenav-container fxFlex>
-
-    <mat-sidenav #sidenav mode="side">
-      <mat-toolbar class="color-menu">
-        <span class="toolbar-filler"></span>
-        <button mat-icon-button (click)="sidenav.toggle();toggleMenu = !toggleMenu" class="md-icon-button sidenav-toggle-button"
-          [hidden]="!sidenav.opened">
-          <mat-icon aria-label="Menu" class="material-icons">arrow_back_ios</mat-icon>
-        </button>
-      </mat-toolbar>
-
-      <mat-nav-list>
-        <a mat-list-item *ngFor="let link of links" [routerLink]="[link.path]" (click)="sidenav.toggle();toggleMenu = !toggleMenu">
-          <mat-icon matListIcon>{{link.icon}}</mat-icon>
-          <span>{{link.label}}</span>
-        </a>
-      </mat-nav-list>
-    </mat-sidenav>
-
     <mat-toolbar color="primary">
       <mat-toolbar-row>
         <div *ngIf='!toggleMenu'>
@@ -26,7 +11,7 @@
             <mat-icon aria-label="Menu" class="material-icons">menu</mat-icon>
           </button>
         </div>
-        <span>&nbsp;Domandj</span>
+            <span>&nbsp;Domandj</span>
         <!-- Filler that pushes the menu button to the end of the toolbar -->
         <span fxFlex></span>
 
@@ -50,12 +35,29 @@
             <button mat-menu-item (click)="onSignOut()" style="cursor:pointer">Logout</button>
           </div>
         </mat-menu>
+
       </mat-toolbar-row>
     </mat-toolbar>
 
+    <mat-sidenav #sidenav mode="side">
+      <mat-toolbar class="color-menu" (click)="sidenav.toggle();toggleMenu = !toggleMenu" >
+        <span class="toolbar-filler"></span>
+        <button mat-icon-button class="md-icon-button sidenav-toggle-button"
+          [hidden]="!sidenav.opened">
+          <mat-icon aria-label="Menu" class="material-icons" style="color: #fff;">arrow_back_ios</mat-icon>
+        </button>
+      </mat-toolbar>
+
+      <mat-nav-list>
+        <a mat-list-item *ngFor="let link of links" [routerLink]="[link.path]" (click)="sidenav.toggle();toggleMenu = !toggleMenu">
+          <mat-icon matListIcon>{{link.icon}}</mat-icon>
+          <span>{{link.label}}</span>
+        </a>
+      </mat-nav-list>
+    </mat-sidenav>
 
 
-    <div class="content" fxFlex>
+    <div class="content">
       <app-alert></app-alert>
       <router-outlet></router-outlet>
     </div>

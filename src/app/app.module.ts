@@ -32,14 +32,19 @@ import { HeaderComponent } from './header/header.component';
 import { SharedModule } from './shared/shared.module';
 import { AuthComponent } from './auth/auth.component';
 import { AlertComponent } from './alert/alert.component';
+import { ZclasseComponent } from './zclasse/zclasse.component';
+import { ClasseListComponent } from './zclasse/classe-list/classe-list.component';
+import { ClasseComponent } from './zclasse/classe/classe.component';
+import { ClasseService } from './zclasse/classe.service';
 
 const routes: Routes= [
   { path: 'auth/signup', component: SignupComponent},
   { path: 'auth/signin', component: SigninComponent},
   { path: 'auth', component: AuthComponent},
   { path: 'groups', canActivate: [AuthGuardService], component: GroupsComponent},
-  { path: '', redirectTo: 'groups', pathMatch: 'full'},
-  { path: '**', redirectTo: 'groups'}
+  { path: 'zclasse', canActivate: [AuthGuardService], component: ZclasseComponent},
+  { path: '', redirectTo: 'zclasse', pathMatch: 'full'},
+  { path: '**', redirectTo: 'zclasse'}
 ]
 
 @NgModule({
@@ -57,7 +62,10 @@ const routes: Routes= [
     SigninComponent,
     HeaderComponent,
     AuthComponent,
-    AlertComponent
+    AlertComponent,
+    ZclasseComponent,
+    ClasseListComponent,
+    ClasseComponent
   ],
   imports: [
     BrowserModule,
@@ -70,8 +78,8 @@ const routes: Routes= [
     AngularFireAuthModule,
     RouterModule.forRoot(routes)
   ],
-  providers: [StudentService, GroupService, AuthService, AuthGuardService],
+  providers: [StudentService, GroupService, ClasseService, AuthService, AuthGuardService],
   bootstrap: [AppComponent],
-  entryComponents: [StudentComponent, GroupComponent, ConfirmDialogComponent]
+  entryComponents: [StudentComponent, GroupComponent, ClasseComponent, ConfirmDialogComponent]
 })
 export class AppModule { }

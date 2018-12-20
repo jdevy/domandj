@@ -12,7 +12,7 @@ router-outlet {
 }
 
 mat-sidenav {
-  width: 300px;
+  width: 200px;
 }
 
 mat-list-item mat-icon {
