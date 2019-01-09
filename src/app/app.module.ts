@@ -36,6 +36,7 @@ import { ZclasseComponent } from './zclasse/zclasse.component';
 import { ClasseListComponent } from './zclasse/classe-list/classe-list.component';
 import { ClasseComponent } from './zclasse/classe/classe.component';
 import { ClasseService } from './zclasse/classe.service';
+import { ZstudentsComponent } from './zstudents/zstudents.component';
 
 const routes: Routes= [
   { path: 'auth/signup', component: SignupComponent},
@@ -65,7 +66,8 @@ const routes: Routes= [
     AlertComponent,
     ZclasseComponent,
     ClasseListComponent,
-    ClasseComponent
+    ClasseComponent,
+    ZstudentsComponent
   ],
   imports: [
     BrowserModule,

@@ -64,4 +64,7 @@ export class ClasseListComponent implements OnInit {
     });
   }
 
+  onClassStudents(key){
+    alert("the students of classe " + key)
+  }
 }
