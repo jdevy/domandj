@@ -10,6 +10,8 @@ export class GroupsComponent implements OnInit {
   constructor() { }
 
   ngOnInit() {
+    console.log("ok groups component");
+
   }
 
 }

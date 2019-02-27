@@ -1,23 +1,23 @@
 import { BrowserModule } from '@angular/platform-browser';
 import { NgModule } from '@angular/core';
 
-import { AngularFireModule } from 'angularfire2';
-import { AngularFireDatabaseModule } from 'angularfire2/database';
+import { AngularFireModule } from '@angular/fire';
+import { AngularFireDatabaseModule } from '@angular/fire/database';
 import { RouterModule, Routes } from '@angular/router';
-import { AngularFireAuthModule } from 'angularfire2/auth';
+import { AngularFireAuthModule } from '@angular/fire/auth';
 
 
 import { AppComponent } from './app.component';
-import { StudentsComponent } from './students/students.component';
-import { StudentComponent } from './students/student/student.component';
+//import { StudentsComponent } from './students/students.component';
+//import { StudentComponent } from './students/student/student.component';
 //import { MaterialModule } from './material/material.module';
 import { ReactiveFormsModule } from '@angular/forms';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { FlexLayoutModule } from '@angular/flex-layout';
-import { StudentService } from './shared/student.service';
+import { StudentService } from './zstudents/student.service';
 
 import { environment } from '../environments/environment';
-import { StudentListComponent } from './students/student-list/student-list.component';
+//import { StudentListComponent } from './students/student-list/student-list.component';
 import { ConfirmDialogComponent } from './confirm-dialog/confirm-dialog.component';
 import { GroupComponent } from './groups/group/group.component';
 import { GroupsComponent } from './groups/groups.component';
@@ -37,6 +37,8 @@ import { ClasseListComponent } from './zclasse/classe-list/classe-list.component
 import { ClasseComponent } from './zclasse/classe/classe.component';
 import { ClasseService } from './zclasse/classe.service';
 import { ZstudentsComponent } from './zstudents/zstudents.component';
+import { AngularFirestore } from '@angular/fire/firestore';
+import { StudentListComponent } from './zstudents/student-list/student-list.component';
 
 const routes: Routes= [
   { path: 'auth/signup', component: SignupComponent},
@@ -51,9 +53,6 @@ const routes: Routes= [
 @NgModule({
   declarations: [
     AppComponent,
-    StudentsComponent,
-    StudentComponent,
-    StudentListComponent,
     ConfirmDialogComponent,
     GroupComponent,
     GroupsComponent,
@@ -67,7 +66,8 @@ const routes: Routes= [
     ZclasseComponent,
     ClasseListComponent,
     ClasseComponent,
-    ZstudentsComponent
+    ZstudentsComponent,
+    StudentListComponent
   ],
   imports: [
     BrowserModule,
@@ -80,8 +80,8 @@ const routes: Routes= [
     AngularFireAuthModule,
     RouterModule.forRoot(routes)
   ],
-  providers: [StudentService, GroupService, ClasseService, AuthService, AuthGuardService],
+  providers: [StudentService, GroupService, ClasseService, AuthService, AuthGuardService, AngularFirestore],
   bootstrap: [AppComponent],
-  entryComponents: [StudentComponent, GroupComponent, ClasseComponent, ConfirmDialogComponent]
+  entryComponents: [StudentListComponent, GroupComponent, ClasseComponent, ConfirmDialogComponent]
 })
 export class AppModule { }

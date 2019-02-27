@@ -11,28 +11,43 @@
             <mat-icon aria-label="Menu" class="material-icons">menu</mat-icon>
           </button>
         </div>
-            <span>&nbsp;Domandj</span>
-        <!-- Filler that pushes the menu button to the end of the toolbar -->
+        <span>&nbsp;Domandj</span>
         <span fxFlex></span>
 
-        <div *ngIf="isAuthenticated">
-          <button mat-icon-button>
-            <mat-icon>person</mat-icon>
+        <div *ngIf="user && user.photoURL">
+          <button mat-mini-fab class="toolbar-avatar" color="primary" [ngStyle]="{ 'background-image' : 'url(' + user.photoURL + ')', 'background-size':'contain'}"
+            [matMenuTriggerFor]="rightMenu">
           </button>
         </div>
 
-        <button mat-icon-button [matMenuTriggerFor]="themeMenu">
-          <mat-icon>more_vert</mat-icon>
-        </button>
+        <div *ngIf="!user || !user.photoURL">
+          <button mat-icon-button [matMenuTriggerFor]="rightMenu">
+            <mat-icon>more_vert</mat-icon>
+          </button>
+        </div>
 
-        <mat-menu #themeMenu x-position="before">
-
-          <div *ngIf="!isAuthenticated">
-            <button mat-menu-item [routerLink]="['auth/signin']">Login</button>
-            <button mat-menu-item [routerLink]="['auth/signup']">Sign up</button>
+        <mat-menu #rightMenu x-position="before">
+          <div *ngIf="!user">
+            <button mat-menu-item [routerLink]="['auth/signin']">
+              <mat-icon>power_settings_new</mat-icon>
+              <span>Login</span>
+            </button>
+            <button mat-menu-item [routerLink]="['auth/signup']">
+              <mat-icon>add</mat-icon>
+              <span>Sign up</span>
+            </button>
           </div>
-          <div *ngIf="isAuthenticated">
-            <button mat-menu-item (click)="onSignOut()" style="cursor:pointer">Logout</button>
+          <div *ngIf="user">
+            <button mat-menu-item disabled *ngIf="user.displayName">
+              <span>{{ user.displayName }}</span>
+            </button>
+            <button mat-menu-item disabled>
+              <span>{{ user.email }}</span>
+            </button>
+            <button mat-menu-item (click)="onSignOut()" style="cursor:pointer">
+              <mat-icon>exit_to_app</mat-icon>
+              <span>Logout</span>
+            </button>
           </div>
         </mat-menu>
 
@@ -40,10 +55,9 @@
     </mat-toolbar>
 
     <mat-sidenav #sidenav mode="side">
-      <mat-toolbar class="color-menu" (click)="sidenav.toggle();toggleMenu = !toggleMenu" >
+      <mat-toolbar class="color-menu" (click)="sidenav.toggle();toggleMenu = !toggleMenu">
         <span class="toolbar-filler"></span>
-        <button mat-icon-button class="md-icon-button sidenav-toggle-button"
-          [hidden]="!sidenav.opened">
+        <button mat-icon-button class="md-icon-button sidenav-toggle-button" [hidden]="!sidenav.opened">
           <mat-icon aria-label="Menu" class="material-icons" style="color: #fff;">arrow_back_ios</mat-icon>
         </button>
       </mat-toolbar>

@@ -13,7 +13,8 @@
 }
 
 .alert-danger {
-    background-color: red;
+    background-color: orangered;
     color: #fff;
     opacity: 1;
+    padding: 5px;
 }

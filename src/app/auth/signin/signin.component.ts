@@ -20,6 +20,7 @@ export class SigninComponent implements OnInit {
     private alertService: AlertService) { }
 
   ngOnInit() {
+    console.log("-- loading signin component ...")
     this.initForm();
   }
 
@@ -35,12 +36,29 @@ export class SigninComponent implements OnInit {
     const password = this.signInForm.get('password').value;
     this.authService.signInUser(email, password).then(
       () => {
-        this.router.navigate(['/groups', 'group']);
+        console.log("ok signInUser component");
+        this.router.navigate(['zclasse']);
       },
       (error) => {
+        console.log("KO signInUser component");
         this.alertService.error('login failed', false);
         //this.errorMessage = error;
       }
     )
   }
+
+  loginGoogle() {
+    this.authService.signInWithGoogle().then(
+      () => {
+        // le reroutage ne fonctionne pas. ne passe pas là.
+        console.log("ok logging google");
+        this.router.navigate(['zclasse']);
+      },
+      (error) => {
+        console.log("KO not logging google");
+        this.alertService.error('login failed', false);
+        //this.errorMessage = error;
+      })
+  }
+
 }

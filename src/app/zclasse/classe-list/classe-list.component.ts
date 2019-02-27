@@ -4,6 +4,13 @@ import { NotificationService } from '../../shared/notification.service';
 import { DialogService } from '../../shared/dialog.service';
 import { ClasseService } from '../classe.service';
 import { ClasseComponent } from '../classe/classe.component';
+import { AuthService } from 'src/app/shared/auth.service';
+import { ClasseItem } from '../shared/classeItem.model';
+import * as firebase from "firebase";
+import { Observable } from 'rxjs';
+import { StudentListComponent } from '../../zstudents/student-list/student-list.component';
+import { StudentService } from '../../zstudents/student.service';
+
 
 @Component({
   selector: 'app-classe-list',
@@ -12,31 +19,44 @@ import { ClasseComponent } from '../classe/classe.component';
 })
 export class ClasseListComponent implements OnInit {
 
+  user: firebase.User;
+
   constructor(private service: ClasseService,
+    private studentService: StudentService,
     private dialog: MatDialog,
     private notificationService: NotificationService,
-    private dialogService: DialogService) {}
+    private dialogService: DialogService,
+    private authService: AuthService) {
+    this.authService.getLoggedInUser().subscribe(
+      user => {
+        this.user = user;
+      }
+    )
+  }
 
   listData: MatTableDataSource<any>;
-  classes: string[];
-  displayedColumns: string[] = ['name','actions'];
+  //classes: string[];
+  classes: ClasseItem[];
+  displayedColumns: string[] = ['name', 'actions'];
 
   ngOnInit() {
-    this.service.getClasses().subscribe(
+
+    this.service.getClasses(this.user.uid).subscribe(
       list => {
-        let array = list.map(
-          item => {
-            return {
-              $key: item.key,
-              ...item.payload.val()
-            };
-          });
-        this.listData = new MatTableDataSource(array);
-        this.classes = array;
+        this.classes = list;
+        // let array = list.map(
+        //   item => {
+        //     return {
+        //       $key: item.key,
+        //       ...item.payload.val()
+        //     };
+        //   });
+        // this.listData = new MatTableDataSource(array);
+        // this.classes = array;
       });
   }
 
-  onCreate(){
+  onCreate() {
     this.service.initializeFormGroup();
     const dialogConfig = new MatDialogConfig();
     dialogConfig.disableClose = true;
@@ -54,17 +74,24 @@ export class ClasseListComponent implements OnInit {
     this.dialog.open(ClasseComponent, dialogConfig);
   }
 
-  onDelete(key){
+  onDelete(key) {
     this.dialogService.openConfirmDialog("Are you sure to delete this record ?").
-    afterClosed().subscribe(res => {
-      if (res) {
-        this.service.deleteClasse(key);
-        this.notificationService.warn('Deleted successfully !');
-      }
-    });
+      afterClosed().subscribe(res => {
+        if (res) {
+          this.service.deleteClasse(key);
+          this.notificationService.warn('Deleted successfully !');
+        }
+      });
   }
 
-  onClassStudents(key){
-    alert("the students of classe " + key)
+  onClassStudents(key) {
+    this.service.initializeFormGroup();
+   // this.studentService.setClasseId(key);
+    this.studentService.initialize(key, this.user.uid);
+    const dialogConfig = new MatDialogConfig();
+    dialogConfig.disableClose = true;
+    dialogConfig.autoFocus = true;
+    dialogConfig.width = "100%";
+    this.dialog.open(StudentListComponent, dialogConfig);
   }
 }
