@@ -16,14 +16,17 @@
           <v-group v-for="plot in plots" :key="plot.id"
             :config="{ x: plot.x, y: plot.y, draggable: true, dragBoundFunc: pos => limitPlotToBounds(pos) }"
             @dragmove="updatePlotPosition(plot, $event)">
-            <v-rect :config="{ width: 130, height: 130, fill: '#ccc', stroke: '#000' }" />
+            <v-rect :config="{
+              width: 130, height: 130, fill: highlightedPlotId === plot.id ? '#8ef0aa' : '#ccc', stroke: '#000', shadowColor: highlightedPlotId === plot.id ? '#666' : '',
+              shadowBlur: highlightedPlotId === plot.id ? 8 : 0
+            }" />
             <v-text :config="{ text: plot.name, fontSize: 14, x: 85, y: 5 }" />
           </v-group>
 
           <!-- Élèves  -->
           <v-group v-for="(student, index) in students" :key="student.id"
             :config="{ ...getStudentPosition(student, index), draggable: true, dragBoundFunc: pos => limitStudentToBounds(pos) }"
-            @dragend="updateStudentPosition(student, $event)">
+            @dragmove="highlightPlotUnder(student, $event)" @dragend="updateStudentPosition(student, $event)">
             <v-image v-if="avatarImage"
               :config="{ image: avatarImage, width: 40, height: 40, offset: { x: 30, y: 20 } }" />
             <!-- Étiquette prénom -->
@@ -66,7 +69,8 @@ export default {
       nextPlotId: 3,
       classes: classData,
       selectedClass: '',
-      students: []
+      students: [],
+      highlightedPlotId: null
     }
   },
   methods: {
@@ -97,23 +101,39 @@ export default {
       plot.y = pos.y
     },
     updateStudentPosition(student, event) {
-      const x = event.target.getAbsolutePosition().x
-      const y = event.target.getAbsolutePosition().y
+      const group = event.target;
+      const pos = group.getAbsolutePosition();
+      if (!pos) return;
+      const width = 40;
+      const height = 40;
 
-      // Trouver le plot en dessous
-      const plot = this.plots.find(p =>
-        x >= p.x &&
-        x <= p.x + 100 &&
-        y >= p.y &&
-        y <= p.y + 100
-      )
+      try {
+        const group = event.target;
+        const pos = group.getAbsolutePosition();
+        const width = 40;
+        const height = 40;
 
-      if (plot) {
-        student.plotId = plot.id
-      } else {
-        student.plotId = null
-        student.x = x
-        student.y = y
+        const centerX = pos.x + width / 2;
+        const centerY = pos.y + height / 2;
+
+        const plot = this.plots.find(p =>
+          centerX >= p.x &&
+          centerX <= p.x + 130 &&
+          centerY >= p.y &&
+          centerY <= p.y + 130
+        );
+
+        if (plot) {
+          student.plotId = plot.id;
+        } else {
+          student.plotId = null;
+          student.x = pos.x;
+          student.y = pos.y;
+        }
+
+        this.highlightedPlotId = null;
+      } catch (e) {
+        console.error("Drag end error:", e);
       }
     },
     addPlot() {
@@ -176,7 +196,26 @@ export default {
       const y = Math.max(padding, Math.min(pos.y, maxY))
 
       return { x, y }
+    },
+    highlightPlotUnder(student, event) {
+      const group = event.target;
+      const pos = group.getAbsolutePosition();
+      const width = 40;  // largeur approximative de l’élève (ou calcule dynamiquement si besoin)
+      const height = 40; // idem
+
+      const centerX = pos.x + width / 2;
+      const centerY = pos.y + height / 2;
+
+      const plot = this.plots.find(p =>
+        centerX >= p.x &&
+        centerX <= p.x + 130 &&
+        centerY >= p.y &&
+        centerY <= p.y + 130
+      );
+
+      this.highlightedPlotId = plot ? plot.id : null;
     }
+
   },
   mounted() {
     const img = new window.Image()
