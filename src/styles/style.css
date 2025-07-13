@@ -20,6 +20,21 @@ html {
   position: relative;
 }
 
+.stage-container {
+  height: 100vh;
+  width: 100%;
+  position: relative;
+  border: 1px solid #ccc;
+  background-color: #fff;
+  overflow: hidden;
+}
+
+.stage-position {
+  position: relative;
+  width: 100%;
+  max-width: 1024px;
+}
+
 .class-selector {
   display: flex;
   flex-wrap: wrap;
@@ -48,46 +63,37 @@ html {
   color: white;
 }
 
-.plus {
+/* Bouton circulaire générique */
+.round-icon-btn {
   position: absolute;
   bottom: 20px;
-  left: 20px;
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  background-color: #186efa;
-  color: white;
-  font-size: 28px;
-  font-weight: bold;
-  border: none;
-  cursor: pointer;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 10;
-  transition: background-color 0.2s;
-}
-
-.plus:hover {
-  background-color: #0d4dbe;
-}
-
-.trash-zone {
-  position: absolute;
-  bottom: 20px;
-  right: 20px;
   width: 60px;
   height: 60px;
   border-radius: 50%;
-  background-color: #e53935;
   display: flex;
-  align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-  z-index: 10;
+  align-items: center;
+  color: white;
   cursor: pointer;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  z-index: 10;
   transition: background-color 0.2s;
+  outline: none;
+  border: none;
+}
+
+.plus-btn {
+  left: 20px;
+  background-color: hsl(209, 100%, 51%);
+}
+
+.plus-btn:hover {
+  background-color: hsl(209, 100%, 40%);
+}
+
+.trash-zone {
+  right: 20px;
+  background-color: #e53935;
 }
 
 .trash-zone:hover {
@@ -96,4 +102,15 @@ html {
 
 .trash-zone svg {
   stroke: white;
+}
+.bottom-left {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+}
+
+.bottom-right {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
 }

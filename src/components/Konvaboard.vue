@@ -198,7 +198,7 @@ function highlightPlotUnder(student, event) {
     margin: 0 auto;
     padding: 0;
     box-sizing: border-box;
-    border: 1px solid #ccc;
+    border: 0px;
     background-color: #964040;
     overflow: hidden;
     position: relative;

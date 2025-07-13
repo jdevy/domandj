@@ -8,14 +8,19 @@
         {{ className }}
       </span>
     </div>
-    <Konvaboard :plots="plots" :students="students" :avatar-image="avatarImage" :stage-size="stageSize"
-      @update:plots="plots = $event" @update:students="students = $event" @delete-plot="deletePlot" />
 
-    <button class="plus" @click="addPlot">
-      <LucidePlus size="24" />
-    </button>
-    <div class="trash-zone">
-      <LucideTrash size="24" />
+    <div class="stage-container stage-position">
+
+      <Konvaboard :plots="plots" :students="students" :avatar-image="avatarImage" :stage-size="stageSize"
+        @update:plots="plots = $event" @update:students="students = $event" @delete-plot="deletePlot" />
+
+      <button class="round-icon-btn plus-btn bottom-left" @click="addPlot">
+        <LucidePlus size="24" />
+      </button>
+
+      <div class="round-icon-btn trash-zone bottom-right" >
+        <LucideTrash size="24" />
+      </div>
     </div>
 
   </div>
@@ -31,8 +36,8 @@ import Konvaboard from './components/Konvaboard.vue'
 const avatarImage = ref(null)
 
 const stageSize = reactive({
-  width: 800,
-  height: 600
+  width: window.innerWidth,
+  height: window.innerHeight
 })
 
 const plots = ref([
@@ -111,4 +116,3 @@ onBeforeUnmount(() => {
   window.removeEventListener('resize', resizeStage)
 })
 </script>
-
