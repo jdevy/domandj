@@ -21,94 +21,94 @@
   </div>
 </template>
 
-<script>
+<script setup lang="ts">
+import { onMounted, onBeforeUnmount, ref, reactive } from 'vue'
 import classData from './data/classes.json'
 import avatarSrc from './assets/duck-icon.svg'
 import Konvaboard from './components/Konvaboard.vue'
 
-export default {
-  components: {
-    Konvaboard
-  },
+// Données réactives
+const avatarImage = ref(null)
 
-  data() {
-    return {
-      avatarImage: null,
+const stageSize = reactive({
+  width: 800,
+  height: 600
+})
 
-      stageSize: {
-        width: 800,
-        height: 600,
-      },
-      plots: [
-        { id: 1, x: 100, y: 100, name: 'Plot A' },
-        { id: 2, x: 300, y: 100, name: 'Plot B' },
-      ],
-      nextPlotId: 3,
-      classes: classData,
-      selectedClass: '',
-      students: [],
-      highlightedPlotId: null
-    }
-  },
-  methods: {
-    selectClass(className) {
-      this.selectedClass = className
-      this.loadStudents()
-    },
-    addPlot() {
-      const id = this.nextPlotId
-      const name = `Plot ${String.fromCharCode(64 + id)}` // 65 = 'A'
-      this.plots.push({
-        id,
-        name,
-        x: 100 + id * 50, // position initiale automatique
-        y: 200
-      })
-      this.nextPlotId++
-    },
-    deletePlot(plotId) {
-      this.plots = this.plots.filter(p => p.id !== plotId)
-    },
-    loadStudents() {
-      if (!this.avatarImage) {
-        // Attendre que l’image soit chargée
-        setTimeout(() => this.loadStudents(), 100)
-        return
-      }
-      const baseX = this.stageSize.width - 150 // à droite de ton stage
-      const baseY = 50
-      this.students = this.classes[this.selectedClass].map((student, index) => ({
-        ...student,
-        x: baseX,                // à droite de l’écran
-        y: baseY + index * 40,   // empilés verticalement
-        plotId: null             // sur la touche
-      }))
-    },
-    resizeStage() {
-      const wrapper = document.querySelector('.stage-wrapper')
-      const padding = 20
-      const width = wrapper?.clientWidth || window.innerWidth
-      const height = window.innerHeight - wrapper?.offsetTop - padding
+const plots = ref([
+  { id: 1, x: 100, y: 100, name: 'Plot A' },
+  { id: 2, x: 300, y: 100, name: 'Plot B' }
+])
 
-      this.stageSize.width = width
-      this.stageSize.height = height
-    },
+const nextPlotId = ref(3)
+const classes = classData
+const selectedClass = ref('')
+const students = ref([])
+const highlightedPlotId = ref(null)
 
-  },
-  mounted() {
-    const img = new window.Image()
-    img.src = avatarSrc
-    img.onload = () => {
-      this.avatarImage = img
-    }
-
-    window.addEventListener('resize', this.resizeStage)
-    this.resizeStage()
-  },
-  beforeUnmount() {
-    window.removeEventListener('resize', this.resizeStage)
-  },
-
-
+// Méthodes
+function selectClass(className) {
+  selectedClass.value = className
+  loadStudents()
 }
+
+function addPlot() {
+  const id = nextPlotId.value
+  const name = `Plot ${String.fromCharCode(64 + id)}`
+  plots.value.push({
+    id,
+    name,
+    x: 100 + id * 50,
+    y: 200
+  })
+  nextPlotId.value++
+}
+
+function deletePlot(plotId) {
+  plots.value = plots.value.filter(p => p.id !== plotId)
+}
+
+function loadStudents() {
+  if (!avatarImage.value) {
+    setTimeout(() => loadStudents(), 100)
+    return
+  }
+
+  const baseX = stageSize.width - 150
+  const baseY = 50
+
+  students.value = classes[selectedClass.value].map((student, index) => ({
+    ...student,
+    x: baseX,
+    y: baseY + index * 40,
+    plotId: null
+  }))
+}
+
+function resizeStage() {
+  const wrapper = document.querySelector('.stage-wrapper')
+  const padding = 20
+  const width = wrapper?.clientWidth || window.innerWidth
+  const height = window.innerHeight - (wrapper?.offsetTop || 0) - padding
+
+  stageSize.width = width
+  stageSize.height = height
+}
+
+// Cycle de vie
+onMounted(() => {
+  const img = new window.Image()
+  img.src = avatarSrc
+  img.onload = () => {
+    avatarImage.value = img
+  }
+
+  window.addEventListener('resize', resizeStage)
+  resizeStage()
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', resizeStage)
+})
 </script>
+

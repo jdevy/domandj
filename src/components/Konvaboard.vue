@@ -1,9 +1,9 @@
 <template>
     <div class="stage-wrapper">
-        <v-stage :config="stageSize">
+        <v-stage :config="props.stageSize">
             <v-layer>
                 <!-- Plots -->
-                <v-group v-for="plot in plots" :key="plot.id"
+                <v-group v-for="plot in props.plots" :key="plot.id"
                     :config="{ x: plot.x, y: plot.y, draggable: true, dragBoundFunc: pos => limitPlotToBounds(pos) }"
                     @dragmove="updatePlotPosition(plot, $event)">
                     <v-rect :config="{
@@ -14,11 +14,11 @@
                 </v-group>
 
                 <!-- Élèves  -->
-                <v-group v-for="(student, index) in students" :key="student.id"
+                <v-group v-for="(student, index) in props.students" :key="student.id"
                     :config="{ ...getStudentPosition(student, index), draggable: true, dragBoundFunc: pos => limitStudentToBounds(pos) }"
                     @dragmove="highlightPlotUnder(student, $event)" @dragend="updateStudentPosition(student, $event)">
-                    <v-image v-if="avatarImage"
-                        :config="{ image: avatarImage, width: 40, height: 40, offset: { x: 30, y: 20 } }" />
+                    <v-image v-if="props.avatarImage"
+                        :config="{ image: props.avatarImage, width: 40, height: 40, offset: { x: 30, y: 20 } }" />
                     <!-- Étiquette prénom -->
                     <v-group>
                         <v-rect :config="{
@@ -38,148 +38,158 @@
     </div>
 </template>
 
-<script>
-export default {
-    props: ['plots', 'students', 'avatarImage', 'stageSize'],
-    emits: ['update:plots', 'update:students'],
-    data() {
+<script setup lang="ts">
+import { ref } from 'vue'
+
+// Props
+const props = defineProps<{
+  plots: any[]
+  students: any[]
+  avatarImage: HTMLImageElement | null
+  stageSize: { width: number, height: number }
+}>()
+
+// Événements émis
+const emit = defineEmits(['update:plots', 'update:students', 'delete-plot'])
+
+// État local
+const highlightedPlotId = ref(null)
+
+// Méthodes
+function getStudentPosition(student, index) {
+    if (student.plotId) {
+        const plot = props.plots.find(p => p.id === student.plotId)
+        const i = props.students.filter(s => s.plotId === student.plotId).indexOf(student)
         return {
-            highlightedPlotId: null,
+            x: plot.x + 10,
+            y: plot.y + 40 + i * 40,
         }
-    },
-    methods: {
-        getStudentPosition(student, index) {
-            if (student.plotId) {
-                const plot = this.plots.find(p => p.id === student.plotId)
-                const i = this.students.filter(s => s.plotId === student.plotId).indexOf(student)
-                return {
-                    x: plot.x + 10,
-                    y: plot.y + 40 + i * 40,
-                }
+    } else {
+        const margin = 20
+        const baseX = Math.max(props.stageSize.width - 130 - margin, margin)
+
+        return {
+            x: baseX,
+            y: 60 + index * 60,
+        }
+    }
+}
+
+function updatePlotPosition(plot, event) {
+    const pos = event.target.position()
+    plot.x = pos.x
+    plot.y = pos.y
+
+    try {
+        const trash = document.querySelector('.trash-zone')
+        if (!trash) return
+
+        const trashRect = trash.getBoundingClientRect()
+        const stage = event.target.getStage()
+        const absPos = stage.getPointerPosition()
+
+        const isOverTrash =
+            absPos.x >= trashRect.left &&
+            absPos.x <= trashRect.right &&
+            absPos.y >= trashRect.top &&
+            absPos.y <= trashRect.bottom
+
+        if (isOverTrash) {
+            const hasStudents = props.students.some(s => s.plotId === plot.id)
+            if (!hasStudents) {
+                emit('delete-plot', plot.id)
             } else {
-                const margin = 20
-                const baseX = Math.max(this.stageSize.width - 130 - margin, margin)
-
-                return {
-                    x: baseX,
-                    y: 60 + index * 60,
-                }
+                alert("Ce plot contient des élèves. Vous devez les retirer avant de supprimer.")
             }
-        },
-        updatePlotPosition(plot, event) {
-            const pos = event.target.position()
-            plot.x = pos.x
-            plot.y = pos.y
+        }
+    } catch (e) {
+        console.warn("Erreur lors du positionnement ou de la suppression du plot", e)
+    }
+}
 
-            try {
-                const trash = document.querySelector('.trash-zone')
-                if (!trash) return
+function updateStudentPosition(student, event) {
+    const group = event.target
+    const pos = group.getAbsolutePosition()
+    if (!pos) return
 
-                const trashRect = trash.getBoundingClientRect()
-                const stage = event.target.getStage()
-                const absPos = stage.getPointerPosition()
+    const width = 40
+    const height = 40
 
-                const isOverTrash =
-                    absPos.x >= trashRect.left &&
-                    absPos.x <= trashRect.right &&
-                    absPos.y >= trashRect.top &&
-                    absPos.y <= trashRect.bottom
+    try {
+        const centerX = pos.x + width / 2
+        const centerY = pos.y + height / 2
 
-                if (isOverTrash) {
-                    const hasStudents = this.students.some(s => s.plotId === plot.id)
-                    if (!hasStudents) {
-                        this.$emit('delete-plot', plot.id) // délégué à App.vue
-                    } else {
-                        alert("Ce plot contient des élèves. Vous devez les retirer avant de supprimer.")
-                    }
-                }
-            } catch (e) {
-                console.warn("Erreur lors du positionnement ou de la suppression du plot", e)
-            }
-        },
-        updateStudentPosition(student, event) {
-            const group = event.target;
-            const pos = group.getAbsolutePosition();
-            if (!pos) return;
-            const width = 40;
-            const height = 40;
+        const plot = props.plots.find(p =>
+            centerX >= p.x &&
+            centerX <= p.x + 130 &&
+            centerY >= p.y &&
+            centerY <= p.y + 130
+        )
 
-            try {
-                const group = event.target;
-                const pos = group.getAbsolutePosition();
-                const width = 40;
-                const height = 40;
+        if (plot) {
+            student.plotId = plot.id
+        } else {
+            student.plotId = null
+            student.x = pos.x
+            student.y = pos.y
+        }
 
-                const centerX = pos.x + width / 2;
-                const centerY = pos.y + height / 2;
+        highlightedPlotId.value = null
+    } catch (e) {
+        console.error("Drag end error:", e)
+    }
+}
 
-                const plot = this.plots.find(p =>
-                    centerX >= p.x &&
-                    centerX <= p.x + 130 &&
-                    centerY >= p.y &&
-                    centerY <= p.y + 130
-                );
+function limitPlotToBounds(pos) {
+    const plotWidth = 130
+    const plotHeight = 130
 
-                if (plot) {
-                    student.plotId = plot.id;
-                } else {
-                    student.plotId = null;
-                    student.x = pos.x;
-                    student.y = pos.y;
-                }
+    const maxX = props.stageSize.width - plotWidth
+    const maxY = props.stageSize.height - plotHeight
 
-                this.highlightedPlotId = null;
-            } catch (e) {
-                console.error("Drag end error:", e);
-            }
-        },
-        limitPlotToBounds(pos) {
-            const plotWidth = 130
-            const plotHeight = 130
+    const x = Math.max(0, Math.min(pos.x, maxX))
+    const y = Math.max(0, Math.min(pos.y, maxY))
 
-            const maxX = this.stageSize.width - plotWidth
-            const maxY = this.stageSize.height - plotHeight
+    return { x, y }
+}
 
-            const x = Math.max(0, Math.min(pos.x, maxX))
-            const y = Math.max(0, Math.min(pos.y, maxY))
+function limitStudentToBounds(pos) {
+    const studentWidth = 70
+    const studentHeight = 40
 
-            return { x, y }
-        },
-        limitStudentToBounds(pos) {
-            const studentWidth = 70
-            const studentHeight = 40
+    const padding = 30
 
-            const padding = 30
+    const maxX = props.stageSize.width - studentWidth - padding
+    const maxY = props.stageSize.height - studentHeight - padding
 
-            const maxX = this.stageSize.width - studentWidth - padding
-            const maxY = this.stageSize.height - studentHeight - padding
+    const x = Math.max(padding, Math.min(pos.x, maxX))
+    const y = Math.max(padding, Math.min(pos.y, maxY))
 
-            const x = Math.max(padding, Math.min(pos.x, maxX))
-            const y = Math.max(padding, Math.min(pos.y, maxY))
+    return { x, y }
+}
 
-            return { x, y }
-        },
-        highlightPlotUnder(student, event) {
-            const group = event.target;
-            const pos = group.getAbsolutePosition();
-            const width = 40;  // largeur approximative de l’élève (ou calcule dynamiquement si besoin)
-            const height = 40; // idem
+function highlightPlotUnder(student, event) {
+    const group = event.target
+    const pos = group.getAbsolutePosition()
+    const width = 40
+    const height = 40
 
-            const centerX = pos.x + width / 2;
-            const centerY = pos.y + height / 2;
+    const centerX = pos.x + width / 2
+    const centerY = pos.y + height / 2
 
-            const plot = this.plots.find(p =>
-                centerX >= p.x &&
-                centerX <= p.x + 130 &&
-                centerY >= p.y &&
-                centerY <= p.y + 130
-            );
+    const plot = props.plots.find(p =>
+        centerX >= p.x &&
+        centerX <= p.x + 130 &&
+        centerY >= p.y &&
+        centerY <= p.y + 130
+    )
 
-            this.highlightedPlotId = plot ? plot.id : null;
-        },
-    },
+    highlightedPlotId.value = plot ? plot.id : null
 }
 </script>
+
+
+
 <style scoped>
 .stage-wrapper {
     width: 100%;
