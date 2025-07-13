@@ -17,5 +17,83 @@ html {
   width: 100vw;
   height: 100vh;
   overflow: hidden;
+  position: relative;
 }
 
+.class-selector {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 1rem 0;
+  justify-content: center;
+}
+
+.class-chip {
+  padding: 8px 16px;
+  border-radius: 20px;
+  background-color: #e0e0e0;
+  color: #333;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.2s;
+  user-select: none;
+}
+
+.class-chip:hover {
+  background-color: #ccc;
+}
+
+.class-chip.active {
+  background-color: #186efa;
+  color: white;
+}
+
+.plus {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background-color: #186efa;
+  color: white;
+  font-size: 28px;
+  font-weight: bold;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  transition: background-color 0.2s;
+}
+
+.plus:hover {
+  background-color: #0d4dbe;
+}
+
+.trash-zone {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background-color: #e53935;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+  z-index: 10;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.trash-zone:hover {
+  background-color: #b71c1c;
+}
+
+.trash-zone svg {
+  stroke: white;
+}

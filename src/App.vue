@@ -1,16 +1,22 @@
 <template>
   <div id="app">
     <h1>Plan de TP - Drag and Drop</h1>
-    <select v-model="selectedClass" @change="loadStudents">
-      <option disabled value="">Choisir une classe</option>
-      <option v-for="(students, className) in classes" :key="className" :value="className">
-        {{ className }}
-      </option>
-    </select>
-    <button @click="addPlot">Ajouter un plot</button>
 
+    <div class="class-selector">
+      <span v-for="(students, className) in classes" :key="className"
+        :class="['class-chip', { active: selectedClass === className }]" @click="selectClass(className)">
+        {{ className }}
+      </span>
+    </div>
     <Konvaboard :plots="plots" :students="students" :avatar-image="avatarImage" :stage-size="stageSize"
-      @update:plots="plots = $event" @update:students="students = $event" />
+      @update:plots="plots = $event" @update:students="students = $event" @delete-plot="deletePlot" />
+
+    <button class="plus" @click="addPlot">
+      <LucidePlus size="24" />
+    </button>
+    <div class="trash-zone">
+      <LucideTrash size="24" />
+    </div>
 
   </div>
 </template>
@@ -45,8 +51,9 @@ export default {
     }
   },
   methods: {
-    getAvatarImage(student) {
-      return this.avatarImage
+    selectClass(className) {
+      this.selectedClass = className
+      this.loadStudents()
     },
     addPlot() {
       const id = this.nextPlotId
@@ -58,6 +65,9 @@ export default {
         y: 200
       })
       this.nextPlotId++
+    },
+    deletePlot(plotId) {
+      this.plots = this.plots.filter(p => p.id !== plotId)
     },
     loadStudents() {
       if (!this.avatarImage) {

@@ -70,6 +70,32 @@ export default {
             const pos = event.target.position()
             plot.x = pos.x
             plot.y = pos.y
+
+            try {
+                const trash = document.querySelector('.trash-zone')
+                if (!trash) return
+
+                const trashRect = trash.getBoundingClientRect()
+                const stage = event.target.getStage()
+                const absPos = stage.getPointerPosition()
+
+                const isOverTrash =
+                    absPos.x >= trashRect.left &&
+                    absPos.x <= trashRect.right &&
+                    absPos.y >= trashRect.top &&
+                    absPos.y <= trashRect.bottom
+
+                if (isOverTrash) {
+                    const hasStudents = this.students.some(s => s.plotId === plot.id)
+                    if (!hasStudents) {
+                        this.$emit('delete-plot', plot.id) // délégué à App.vue
+                    } else {
+                        alert("Ce plot contient des élèves. Vous devez les retirer avant de supprimer.")
+                    }
+                }
+            } catch (e) {
+                console.warn("Erreur lors du positionnement ou de la suppression du plot", e)
+            }
         },
         updateStudentPosition(student, event) {
             const group = event.target;
