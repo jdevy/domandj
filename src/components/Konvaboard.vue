@@ -10,8 +10,8 @@
                         width: 130, height: 130,
                         fill: plotBeingDeletedId === plot.id
                             ? '#e53935'
-                            : (highlightedPlotId === plot.id ? '#8ef0aa' : '#ccc'),
-                        stroke: '#000', shadowColor: highlightedPlotId === plot.id ? '#666' : '',
+                            : (highlightedPlotId === plot.id ? '#8ef0aa' : '#dfefff'),
+                        stroke: '#666', shadowColor: highlightedPlotId === plot.id ? '#666' : '',
                         shadowBlur: highlightedPlotId === plot.id ? 8 : 0
                     }" />
                     <v-text :config="{ text: plot.name, fontSize: 14, x: 85, y: 5 }" />
@@ -211,7 +211,7 @@ function highlightPlotUnder(student, event) {
     padding: 0;
     box-sizing: border-box;
     border: 0px;
-    background-color: #964040;
+    background-color: #b85995;
     overflow: hidden;
     position: relative;
     flex-grow: 1;
