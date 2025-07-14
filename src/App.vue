@@ -9,7 +9,7 @@
       </span>
     </div>
 
-    <div class="stage-container stage-position">
+    <div class="stage-container stage-position" ref="stageContainer">
 
       <Konvaboard :plots="plots" :students="students" :avatar-image="avatarImage" :stage-size="stageSize"
         @update:plots="plots = $event" @update:students="students = $event" @delete-plot="deletePlot" />
@@ -18,7 +18,7 @@
         <LucidePlus size="24" />
       </button>
 
-      <div class="round-icon-btn trash-zone bottom-right" >
+      <div class="round-icon-btn trash-zone bottom-right">
         <LucideTrash size="24" />
       </div>
     </div>
@@ -27,13 +27,15 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, onBeforeUnmount, ref, reactive } from 'vue'
+import { onMounted, onBeforeUnmount, ref, reactive, nextTick } from 'vue'
 import classData from './data/classes.json'
 import avatarSrc from './assets/duck-icon.svg'
 import Konvaboard from './components/Konvaboard.vue'
 
 // Données réactives
 const avatarImage = ref(null)
+const stageContainer = ref<HTMLElement | null>(null)
+
 
 const stageSize = reactive({
   width: window.innerWidth,
@@ -63,8 +65,8 @@ function addPlot() {
   plots.value.push({
     id,
     name,
-    x: 100 + id * 50,
-    y: 200
+    x: 100 + id * 20,
+    y: 200 + id * 20
   })
   nextPlotId.value++
 }
@@ -91,13 +93,13 @@ function loadStudents() {
 }
 
 function resizeStage() {
-  const wrapper = document.querySelector('.stage-wrapper')
-  const padding = 20
-  const width = wrapper?.clientWidth || window.innerWidth
-  const height = window.innerHeight - (wrapper?.offsetTop || 0) - padding
+  if (!stageContainer.value) return
 
-  stageSize.width = width
-  stageSize.height = height
+  const rect = stageContainer.value.getBoundingClientRect()
+  const padding = 20
+
+  stageSize.width = rect.width
+  stageSize.height = window.innerHeight - rect.top - padding
 }
 
 // Cycle de vie
@@ -108,8 +110,10 @@ onMounted(() => {
     avatarImage.value = img
   }
 
-  window.addEventListener('resize', resizeStage)
-  resizeStage()
+  nextTick(() => {
+    resizeStage()
+    window.addEventListener('resize', resizeStage)
+  })
 })
 
 onBeforeUnmount(() => {

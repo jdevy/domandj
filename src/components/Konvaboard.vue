@@ -5,9 +5,13 @@
                 <!-- Plots -->
                 <v-group v-for="plot in props.plots" :key="plot.id"
                     :config="{ x: plot.x, y: plot.y, draggable: true, dragBoundFunc: pos => limitPlotToBounds(pos) }"
-                    @dragmove="updatePlotPosition(plot, $event)">
+                    @dragmove="updatePlotPosition(plot, $event)" @dragend="updatePlotPosition(plot, $event)">
                     <v-rect :config="{
-                        width: 130, height: 130, fill: highlightedPlotId === plot.id ? '#8ef0aa' : '#ccc', stroke: '#000', shadowColor: highlightedPlotId === plot.id ? '#666' : '',
+                        width: 130, height: 130,
+                        fill: plotBeingDeletedId === plot.id
+                            ? '#e53935'
+                            : (highlightedPlotId === plot.id ? '#8ef0aa' : '#ccc'),
+                        stroke: '#000', shadowColor: highlightedPlotId === plot.id ? '#666' : '',
                         shadowBlur: highlightedPlotId === plot.id ? 8 : 0
                     }" />
                     <v-text :config="{ text: plot.name, fontSize: 14, x: 85, y: 5 }" />
@@ -43,10 +47,10 @@ import { ref } from 'vue'
 
 // Props
 const props = defineProps<{
-  plots: any[]
-  students: any[]
-  avatarImage: HTMLImageElement | null
-  stageSize: { width: number, height: number }
+    plots: any[]
+    students: any[]
+    avatarImage: HTMLImageElement | null
+    stageSize: { width: number, height: number }
 }>()
 
 // Événements émis
@@ -54,6 +58,8 @@ const emit = defineEmits(['update:plots', 'update:students', 'delete-plot'])
 
 // État local
 const highlightedPlotId = ref(null)
+
+const plotBeingDeletedId = ref<number | null>(null)
 
 // Méthodes
 function getStudentPosition(student, index) {
@@ -80,21 +86,26 @@ function updatePlotPosition(plot, event) {
     plot.x = pos.x
     plot.y = pos.y
 
-    try {
-        const trash = document.querySelector('.trash-zone')
-        if (!trash) return
+    // On récupère la position absolue du pointeur (curseur)
+    const stage = event.target.getStage()
+    const pointer = stage?.getPointerPosition()
 
-        const trashRect = trash.getBoundingClientRect()
-        const stage = event.target.getStage()
-        const absPos = stage.getPointerPosition()
+    if (!pointer) return
 
-        const isOverTrash =
-            absPos.x >= trashRect.left &&
-            absPos.x <= trashRect.right &&
-            absPos.y >= trashRect.top &&
-            absPos.y <= trashRect.bottom
+    const margin = 80
+    const thresholdX = props.stageSize.width - margin
+    const thresholdY = props.stageSize.height - margin
 
-        if (isOverTrash) {
+    const isOverDeleteZone = pointer.x >= thresholdX && pointer.y >= thresholdY
+
+    if (isOverDeleteZone) {
+        plotBeingDeletedId.value = plot.id
+    } else if (plotBeingDeletedId.value === plot.id) {
+        plotBeingDeletedId.value = null
+    }
+
+    if (event.type === 'dragend') {
+        if (isOverDeleteZone) {
             const hasStudents = props.students.some(s => s.plotId === plot.id)
             if (!hasStudents) {
                 emit('delete-plot', plot.id)
@@ -102,8 +113,9 @@ function updatePlotPosition(plot, event) {
                 alert("Ce plot contient des élèves. Vous devez les retirer avant de supprimer.")
             }
         }
-    } catch (e) {
-        console.warn("Erreur lors du positionnement ou de la suppression du plot", e)
+
+        // Toujours réinitialiser l’indicateur visuel
+        plotBeingDeletedId.value = null
     }
 }
 
@@ -186,6 +198,7 @@ function highlightPlotUnder(student, event) {
 
     highlightedPlotId.value = plot ? plot.id : null
 }
+
 </script>
 
 
@@ -194,7 +207,6 @@ function highlightPlotUnder(student, event) {
 .stage-wrapper {
     width: 100%;
     max-width: 1024px;
-    height: 100%;
     margin: 0 auto;
     padding: 0;
     box-sizing: border-box;
@@ -202,5 +214,7 @@ function highlightPlotUnder(student, event) {
     background-color: #964040;
     overflow: hidden;
     position: relative;
+    flex-grow: 1;
+    height: 100%;
 }
 </style>
