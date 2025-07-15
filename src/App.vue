@@ -12,7 +12,10 @@
     <div class="stage-container stage-position" ref="stageContainer">
 
       <Konvaboard :plots="plots" :students="students" :avatar-image="avatarImage" :stage-size="stageSize"
-        @update:plots="plots = $event" @update:students="students = $event" @delete-plot="deletePlot" />
+        @update:plots="plots = $event" 
+        @update:students="students = $event" 
+        @delete-plot="deletePlot"
+        @open-evaluation="openEvaluation" />
 
       <button class="round-icon-btn plus-btn bottom-left" @click="addPlot">
         <LucidePlus size="24" />
@@ -23,6 +26,9 @@
       </div>
     </div>
 
+    <Evaluation :visible="showEvalModal" @close="showEvalModal = false">
+      <p>Évaluation du plot : <strong>{{ currentPlot?.name }}</strong></p>
+    </Evaluation>
   </div>
 </template>
 
@@ -31,11 +37,13 @@ import { onMounted, onBeforeUnmount, ref, reactive, nextTick } from 'vue'
 import classData from './data/classes.json'
 import avatarSrc from './assets/duck-icon.svg'
 import Konvaboard from './components/Konvaboard.vue'
+import Evaluation from './components/Evaluation.vue'
 
 // Données réactives
 const avatarImage = ref(null)
 const stageContainer = ref<HTMLElement | null>(null)
-
+const showEvalModal = ref(false)
+const currentPlot = ref(null)
 
 const stageSize = reactive({
   width: window.innerWidth,
@@ -100,6 +108,11 @@ function resizeStage() {
 
   stageSize.width = rect.width
   stageSize.height = window.innerHeight - rect.top - padding
+}
+
+function openEvaluation(plot) {
+  currentPlot.value = plot
+  showEvalModal.value = true
 }
 
 // Cycle de vie

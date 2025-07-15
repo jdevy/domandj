@@ -1,0 +1,9 @@
+{
+  "Competence": [
+    { "id": 1, "libelle_long": "savoir pipeter", "libelle_court": "pipeter", "coeff": 2 },
+    { "id": 2, "libelle_long": "mettre sa blouse", "libelle_court": "blouse", "coeff": 1 },
+    { "id": 3, "libelle_long": "savoir utiliser une éprouvette", "libelle_court": "éprouvette", "coeff": 2 },
+    { "id": 4, "libelle_long": "utiliser la hotte aspirante", "libelle_court": "hotte", "coeff": 1 },
+    { "id": 5, "libelle_long": "mettre ses lunettes de protection", "libelle_court": "lunettes", "coeff": 1 }
+  ]
+}

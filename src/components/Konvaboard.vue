@@ -15,6 +15,16 @@
                         shadowBlur: highlightedPlotId === plot.id ? 8 : 0
                     }" />
                     <v-text :config="{ text: plot.name, fontSize: 14, x: 85, y: 5 }" />
+
+                    <!-- "Bouton" Évaluation -->
+                    <v-rect :config="{
+                        x: 100, y: 100, width: 20, height: 20, fill: '#186efa', cornerRadius: 5,
+                        stroke: '#fff', strokeWidth: 1, shadowBlur: 2, cursor: 'pointer'
+                    }" @click="emit('open-evaluation', plot)" />
+                    <v-text :config="{
+                        text: 'i', x: 106, y: 103, fontSize: 14, fill: '#fff', fontStyle: 'bold'
+                    }" />
+
                 </v-group>
 
                 <!-- Élèves  -->
