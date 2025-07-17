@@ -1,5 +1,5 @@
 {
-  "Competence": [
+  "default": [
     { "id": 1, "libelle_long": "savoir pipeter", "libelle_court": "pipeter", "coeff": 2 },
     { "id": 2, "libelle_long": "mettre sa blouse", "libelle_court": "blouse", "coeff": 1 },
     { "id": 3, "libelle_long": "savoir utiliser une éprouvette", "libelle_court": "éprouvette", "coeff": 2 },

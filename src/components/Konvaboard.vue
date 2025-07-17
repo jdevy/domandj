@@ -20,7 +20,10 @@
                     <v-rect :config="{
                         x: 100, y: 100, width: 20, height: 20, fill: '#186efa', cornerRadius: 5,
                         stroke: '#fff', strokeWidth: 1, shadowBlur: 2, cursor: 'pointer'
-                    }" @click="emit('open-evaluation', plot)" />
+                    }" @click="() => {
+  console.log('Évaluation demandée pour', plot)
+  emit('open-evaluation', plot)
+}" />
                     <v-text :config="{
                         text: 'i', x: 106, y: 103, fontSize: 14, fill: '#fff', fontStyle: 'bold'
                     }" />
@@ -64,7 +67,12 @@ const props = defineProps<{
 }>()
 
 // Événements émis
-const emit = defineEmits(['update:plots', 'update:students', 'delete-plot'])
+const emit = defineEmits<{
+  (e: 'update:plots', value: any[]): void
+  (e: 'update:students', value: any[]): void
+  (e: 'delete-plot', id: number): void
+  (e: 'open-evaluation', plot: any): void
+}>()
 
 // État local
 const highlightedPlotId = ref(null)

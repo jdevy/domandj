@@ -12,9 +12,7 @@
     <div class="stage-container stage-position" ref="stageContainer">
 
       <Konvaboard :plots="plots" :students="students" :avatar-image="avatarImage" :stage-size="stageSize"
-        @update:plots="plots = $event" 
-        @update:students="students = $event" 
-        @delete-plot="deletePlot"
+        @update:plots="plots = $event" @update:students="students = $event" @delete-plot="deletePlot"
         @open-evaluation="openEvaluation" />
 
       <button class="round-icon-btn plus-btn bottom-left" @click="addPlot">
@@ -26,8 +24,8 @@
       </div>
     </div>
 
-    <Evaluation :visible="showEvalModal" @close="showEvalModal = false">
-      <p>Évaluation du plot : <strong>{{ currentPlot?.name }}</strong></p>
+    <Evaluation :visible="showEvalModal" :form="currentEvaluationForm" :competenceList="competences"
+      :students="students" @close="showEvalModal = false">
     </Evaluation>
   </div>
 </template>
@@ -35,15 +33,31 @@
 <script setup lang="ts">
 import { onMounted, onBeforeUnmount, ref, reactive, nextTick } from 'vue'
 import classData from './data/classes.json'
+import competencesData from './data/competences.json'
 import avatarSrc from './assets/duck-icon.svg'
 import Konvaboard from './components/Konvaboard.vue'
 import Evaluation from './components/Evaluation.vue'
+
+interface Competence {
+  id: number
+  statut: boolean | null
+}
+
+interface EvaluationForm {
+  plotId: number
+  plotName: string
+  competences: Competence[]
+  students: { id: number; name: string }[]
+}
 
 // Données réactives
 const avatarImage = ref(null)
 const stageContainer = ref<HTMLElement | null>(null)
 const showEvalModal = ref(false)
 const currentPlot = ref(null)
+const competences = competencesData.default
+const evaluationForms = ref<Record<number, any>>({}) // indexé par plotId
+const currentEvaluationForm = ref<EvaluationForm | null>(null)
 
 const stageSize = reactive({
   width: window.innerWidth,
@@ -112,7 +126,30 @@ function resizeStage() {
 
 function openEvaluation(plot) {
   currentPlot.value = plot
+  // Si une évaluation existe déjà, on la charge
+  const savedForm = localStorage.getItem(`evaluation-${plot.id}`)
+
+  if (savedForm) {
+    currentEvaluationForm.value = JSON.parse(savedForm)
+  } else {
+    // Sinon, on crée une nouvelle structure à partir des compétences
+    currentEvaluationForm.value = generateNewForm(plot)
+  }
   showEvalModal.value = true
+}
+
+function generateNewForm(plot) {
+  return {
+    plotId: plot.id,
+    plotName: plot.name,
+    competences: competences.map(c => ({
+      id: c.id,
+      statut: null
+    })),
+    students: students.value
+      .filter(s => s.plotId === plot.id)
+      .map(s => s.name)
+  }
 }
 
 // Cycle de vie
