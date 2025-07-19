@@ -15,6 +15,7 @@
 import { watch, computed } from 'vue'
 import debounce from 'lodash.debounce'
 import CompetenceToggle from './CompetenceToggle.vue'
+import { EvaluationForm } from '@/models';
 
 const props = defineProps<{
     visible: boolean
@@ -33,7 +34,7 @@ const plotStudents = computed(() => {
     return props.students.filter(s => s.plotId === props.form?.plotId)
 })
 
-watch(() => props.form, debounce((newForm) => {
+watch(() => props.form, debounce((newForm: EvaluationForm) => {
     if (newForm) {
         localStorage.setItem(`evaluation-${newForm.plotId}`, JSON.stringify(newForm))
     }

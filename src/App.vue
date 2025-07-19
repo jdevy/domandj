@@ -32,56 +32,43 @@
 
 <script setup lang="ts">
 import { onMounted, onBeforeUnmount, ref, reactive, nextTick } from 'vue'
-import classData from './data/classes.json'
-import competencesData from './data/competences.json'
+import classData from './models/classData'
+import competenceData from './models/competenceData'
 import avatarSrc from './assets/duck-icon.svg'
 import Konvaboard from './components/Konvaboard.vue'
 import Evaluation from './components/Evaluation.vue'
-
-interface Competence {
-  id: number
-  statut: boolean | null
-}
-
-interface EvaluationForm {
-  plotId: number
-  plotName: string
-  competences: Competence[]
-  students: { id: number; name: string }[]
-}
+import type { Plot, Student, EvaluationForm } from '@/models'
 
 // Données réactives
-const avatarImage = ref(null)
-const stageContainer = ref<HTMLElement | null>(null)
-const showEvalModal = ref(false)
-const currentPlot = ref(null)
-const competences = competencesData.default
-const evaluationForms = ref<Record<number, any>>({}) // indexé par plotId
-const currentEvaluationForm = ref<EvaluationForm | null>(null)
-
-const stageSize = reactive({
+const stageSize = reactive<{ width: number; height: number }>({
   width: window.innerWidth,
   height: window.innerHeight
 })
 
-const plots = ref([
+const classes = classData
+const competences = competenceData
+const stageContainer = ref<HTMLElement | null>(null)
+const avatarImage = ref<HTMLImageElement | null>(null)
+const showEvalModal = ref(false)
+const currentPlot = ref<Plot | null>(null)
+const currentEvaluationForm = ref<EvaluationForm | null>(null)
+
+const plots = ref<Plot[]>([
   { id: 1, x: 100, y: 100, name: 'Plot A' },
   { id: 2, x: 300, y: 100, name: 'Plot B' }
 ])
 
 const nextPlotId = ref(3)
-const classes = classData
 const selectedClass = ref('')
-const students = ref([])
-const highlightedPlotId = ref(null)
+const students = ref<Student[]>([])
 
 // Méthodes
-function selectClass(className) {
+function selectClass(className: string) {
   selectedClass.value = className
   loadStudents()
 }
 
-function addPlot() {
+function addPlot(): void {
   const id = nextPlotId.value
   const name = `Plot ${String.fromCharCode(64 + id)}`
   plots.value.push({
@@ -93,7 +80,7 @@ function addPlot() {
   nextPlotId.value++
 }
 
-function deletePlot(plotId) {
+function deletePlot(plotId: number): void {
   plots.value = plots.value.filter(p => p.id !== plotId)
 }
 
@@ -124,7 +111,7 @@ function resizeStage() {
   stageSize.height = window.innerHeight - rect.top - padding
 }
 
-function openEvaluation(plot) {
+function openEvaluation(plot: Plot): void {
   currentPlot.value = plot
   // Si une évaluation existe déjà, on la charge
   const savedForm = localStorage.getItem(`evaluation-${plot.id}`)
@@ -138,17 +125,20 @@ function openEvaluation(plot) {
   showEvalModal.value = true
 }
 
-function generateNewForm(plot) {
+function generateNewForm(plot: Plot): EvaluationForm {
   return {
     plotId: plot.id,
     plotName: plot.name,
     competences: competences.map(c => ({
       id: c.id,
+      libelle_long: c.libelle_long,
+      libelle_court: c.libelle_court,
+      coeff: c.coeff,
       statut: null
     })),
     students: students.value
       .filter(s => s.plotId === plot.id)
-      .map(s => s.name)
+      .map(s => ({ id: s.id, name: s.name }))
   }
 }
 
