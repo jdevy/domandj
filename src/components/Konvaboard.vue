@@ -80,11 +80,22 @@ const highlightedPlotId = ref<number | null>(null)
 const plotBeingDeletedId = ref<number | null>(null)
 
 // Méthodes
-function getStudentPosition(student: Student, index: number) {
+function getPlotForStudent(student: Student): Plot | undefined {
+  return props.plots.find(p => p.id === student.plotId)
+}
+
+function getStudentIndexInPlot(student: Student): number {
+  return props.students
+    .filter(s => s.plotId === student.plotId)
+    .findIndex(s => s.id === student.id)
+}
+
+function getStudentPosition(student: Student, index: number): Position {
     if (student.plotId) {
-        const plot = props.plots.find(p => p.id === student.plotId)
-        const i = props.students.filter(s => s.plotId === student.plotId).indexOf(student)
+        const plot = getPlotForStudent(student)
+
         if (plot) {
+            const i = getStudentIndexInPlot(student)
             return {
                 x: plot.x + 10,
                 y: plot.y + 40 + i * 40,
@@ -93,7 +104,7 @@ function getStudentPosition(student: Student, index: number) {
         return { x: 0, y: 0 }
     } else {
         const margin = 20
-        const baseX = Math.max(props.stageSize.width - 130 - margin, margin)
+        const baseX = Math.max(props.stageSize.width - 100 - margin, margin)
 
         return {
             x: baseX,

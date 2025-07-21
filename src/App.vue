@@ -90,7 +90,7 @@ function loadStudents() {
     return
   }
 
-  const baseX = stageSize.width - 150
+  const baseX = stageSize.width - 130
   const baseY = 50
 
   students.value = classes[selectedClass.value].map((student, index) => ({
@@ -141,7 +141,7 @@ function generateNewForm(plot: Plot): EvaluationForm {
       .map(s => ({ id: s.id, name: s.name }))
   }
 }
-
+ 
 // Cycle de vie
 onMounted(() => {
   const img = new window.Image()
