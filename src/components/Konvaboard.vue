@@ -246,9 +246,10 @@ function highlightPlotUnder(student: Student, event: DragKonvaEvent) {
     box-sizing: border-box;
     border: 0px;
     background-color: #b85995;
-    overflow: hidden;
+    overflow: auto;
     position: relative;
     flex-grow: 1;
     height: 100%;
+    overflow-x: hidden;
 }
 </style>

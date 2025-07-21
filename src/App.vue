@@ -1,6 +1,6 @@
 <template>
   <div id="app">
-    <h1>Plan de TP - Drag and Drop</h1>
+    <h1>Evaluation TP</h1>
 
     <div class="class-selector">
       <span v-for="(students, className) in classes" :key="className"

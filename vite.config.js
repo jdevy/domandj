@@ -17,7 +17,8 @@ export default defineConfig({
         theme_color: '#186efa',
         background_color: '#ffffff',
         display: 'standalone',
-        start_url: '/',
+        start_url: '/domandj/',
+        scope: '/domandj/',
         icons: [
           {
             src: 'icons/icon-192x192.png',
