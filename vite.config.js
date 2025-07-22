@@ -11,7 +11,7 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'robots.txt'],
       manifest: {
-        name: 'Plan de TP',
+        name: 'Evalue un TP',
         short_name: 'TP',
         description: 'Application pour organiser les élèves',
         theme_color: '#186efa',
