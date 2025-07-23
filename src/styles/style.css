@@ -1,11 +1,14 @@
-body,
-html {
+body, html, canvas {
   margin: 0;
   padding: 0;
   height: 100%;
   box-sizing: border-box;
-  overflow-x: hidden;
+  overflow-x: hidden !important;
   overflow-y: hidden;
+  touch-action: none; /* empêche le scrolling ou le zoom lors du drag */
+  -webkit-user-drag: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 #app {

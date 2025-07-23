@@ -32,6 +32,7 @@
 
 <script setup lang="ts">
 import { onMounted, onBeforeUnmount, ref, reactive, nextTick } from 'vue'
+import Konva from 'konva'
 import classData from './models/classData'
 import competenceData from './models/competenceData'
 import avatarSrc from './assets/duck-icon.svg'
@@ -148,6 +149,12 @@ onMounted(() => {
   img.src = avatarSrc
   img.onload = () => {
     avatarImage.value = img
+  }
+  
+  // Supprimer la latence tactile
+  const stage = Konva.stages?.[0];
+  if (stage) {
+    stage.setAttr('dragDistance', 0);
   }
 
   nextTick(() => {
