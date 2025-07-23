@@ -11,21 +11,18 @@
                         fill: plotBeingDeletedId === plot.id
                             ? '#e53935'
                             : (highlightedPlotId === plot.id ? '#8ef0aa' : '#dfefff'),
-                        stroke: '#666', shadowColor: highlightedPlotId === plot.id ? '#666' : '',
+                        stroke: '#792f60', shadowColor: highlightedPlotId === plot.id ? '#666' : '',
                         shadowBlur: highlightedPlotId === plot.id ? 8 : 0
                     }" />
                     <v-text :config="{ text: plot.name, fontSize: 14, x: 85, y: 5 }" />
 
                     <!-- "Bouton" Évaluation -->
                     <template v-if="hasStudents(plot, props.students)">
-                        <v-rect :config="{
-                            x: 100, y: 100, width: 20, height: 20, fill: '#186efa', cornerRadius: 5,
-                            stroke: '#fff', strokeWidth: 1, shadowBlur: 2, cursor: 'pointer'
-                        }" @click="() => { emit('open-evaluation', plot) }" />
-                        <v-text :config="{
-                            text: 'i', x: 106, y: 103, fontSize: 14, fill: '#fff', fontStyle: 'bold'
-                        }" />
-                    </template>
+                        <v-group :config="defaultGroupPosition(110,100)" @click="() => emit('open-evaluation', plot)">
+                            <v-rect :config="evaluationButtonRect" />
+                            <v-text :config="evaluationButtonText" />
+                        </v-group> 
+                    </template> 
 
                 </v-group>
 
@@ -58,6 +55,7 @@
 import { ref } from 'vue'
 import { hasStudents } from '@/services/plotService'
 import type { Plot, Student, DragKonvaEvent, Position } from '@/models'
+import { evaluationButtonRect, evaluationButtonText, defaultGroupPosition } from '@/styles/konvaStyles'
 
 // Props
 const props = defineProps<{
@@ -81,13 +79,13 @@ const plotBeingDeletedId = ref<number | null>(null)
 
 // Méthodes
 function getPlotForStudent(student: Student): Plot | undefined {
-  return props.plots.find(p => p.id === student.plotId)
+    return props.plots.find(p => p.id === student.plotId)
 }
 
 function getStudentIndexInPlot(student: Student): number {
-  return props.students
-    .filter(s => s.plotId === student.plotId)
-    .findIndex(s => s.id === student.id)
+    return props.students
+        .filter(s => s.plotId === student.plotId)
+        .findIndex(s => s.id === student.id)
 }
 
 function getStudentPosition(student: Student, index: number): Position {
