@@ -6,23 +6,18 @@
                 <v-group v-for="plot in props.plots" :key="plot.id"
                     :config="{ x: plot.x, y: plot.y, draggable: true, dragBoundFunc: limitPlotToBounds }"
                     @dragmove="updatePlotPosition(plot, $event)" @dragend="updatePlotPosition(plot, $event)">
-                    <v-rect :config="{
-                        width: 130, height: 130,
-                        fill: plotBeingDeletedId === plot.id
-                            ? '#e53935'
-                            : (highlightedPlotId === plot.id ? '#8ef0aa' : '#dfefff'),
-                        stroke: '#792f60', shadowColor: highlightedPlotId === plot.id ? '#666' : '',
-                        shadowBlur: highlightedPlotId === plot.id ? 8 : 0
-                    }" />
-                    <v-text :config="{ text: plot.name, fontSize: 14, x: 85, y: 5 }" />
+                    <v-rect
+                        :config="getPlotRectStyle(plot, highlightedPlotId === plot.id, plotBeingDeletedId === plot.id)" />
+                    <v-text :config="{ text: plot.name, ...getPlotTextStyle() }" />
 
                     <!-- "Bouton" Évaluation -->
                     <template v-if="hasStudents(plot, props.students)">
-                        <v-group :config="defaultGroupPosition(110,100)" @click="() => emit('open-evaluation', plot)">
+                        <v-group :config="defaultGroupPosition(110, 100)" @click="() => emit('open-evaluation', plot)"
+                            @tap="() => emit('open-evaluation', plot)">
                             <v-rect :config="evaluationButtonRect" />
                             <v-text :config="evaluationButtonText" />
-                        </v-group> 
-                    </template> 
+                        </v-group>
+                    </template>
 
                 </v-group>
 
@@ -30,20 +25,12 @@
                 <v-group v-for="(student, index) in props.students" :key="student.id"
                     :config="{ ...getStudentPosition(student, index), draggable: true, dragBoundFunc: limitStudentToBounds }"
                     @dragmove="highlightPlotUnder(student, $event)" @dragend="updateStudentPosition(student, $event)">
-                    <v-image v-if="props.avatarImage"
-                        :config="{ image: props.avatarImage, width: 40, height: 40, offset: { x: 30, y: 20 } }" />
+                    <v-image v-if="props.avatarImage" :config="getStudentAvatarStyle(props.avatarImage)" />
+
                     <!-- Étiquette prénom -->
                     <v-group>
-                        <v-rect :config="{
-                            x: 12, y: -10,
-                            width: 70, height: 25,
-                            fill: '#186efa', cornerRadius: 10
-                        }" />
-                        <v-text :config="{
-                            text: student.name,
-                            x: 25, y: -4,
-                            fontSize: 14, fill: '#fff', width: 50, align: 'left'
-                        }" />
+                        <v-rect :config="getStudentLabelRectStyle()" />
+                        <v-text :config="getStudentLabelTextStyle(student.name)" />
                     </v-group>
                 </v-group>
             </v-layer>
@@ -55,7 +42,10 @@
 import { ref } from 'vue'
 import { hasStudents } from '@/services/plotService'
 import type { Plot, Student, DragKonvaEvent, Position } from '@/models'
-import { evaluationButtonRect, evaluationButtonText, defaultGroupPosition } from '@/styles/konvaStyles'
+import {
+    evaluationButtonRect, evaluationButtonText, defaultGroupPosition, getPlotRectStyle,
+    getPlotTextStyle, getStudentAvatarStyle, getStudentLabelRectStyle, getStudentLabelTextStyle
+} from '@/styles/konvaStyles'
 
 // Props
 const props = defineProps<{
