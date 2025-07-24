@@ -8,7 +8,7 @@
                     @dragmove="updatePlotPosition(plot, $event)" @dragend="updatePlotPosition(plot, $event)">
                     <v-rect
                         :config="getPlotRectStyle(plot, highlightedPlotId === plot.id, plotBeingDeletedId === plot.id)" />
-                    <v-text :config="{ text: plot.name, ...getPlotTextStyle() }" />
+                    <v-text :config="{ text: plot.name, ...getPlotTextStyle(plot) }" />
 
                     <!-- "Bouton" Évaluation -->
                     <template v-if="hasStudents(plot, props.students)">
@@ -239,5 +239,9 @@ function highlightPlotUnder(student: Student, event: DragKonvaEvent) {
     flex-grow: 1;
     height: 100%;
     overflow-x: hidden;
+}
+
+.konva-container canvas {
+  touch-action: manipulation;
 }
 </style>

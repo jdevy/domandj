@@ -27,6 +27,10 @@
     <Evaluation :visible="showEvalModal" :form="currentEvaluationForm" :competenceList="competences"
       :students="students" @close="showEvalModal = false">
     </Evaluation>
+
+    <div class="version-indicator">
+      v{{ version }}
+    </div>
   </div>
 </template>
 
@@ -40,6 +44,7 @@ import Konvaboard from './components/Konvaboard.vue'
 import Evaluation from './components/Evaluation.vue'
 import type { Plot, Student, EvaluationForm } from '@/models'
 
+const version = import.meta.env.PACKAGE_VERSION
 // Données réactives
 const stageSize = reactive<{ width: number; height: number }>({
   width: window.innerWidth,
@@ -142,7 +147,7 @@ function generateNewForm(plot: Plot): EvaluationForm {
       .map(s => ({ id: s.id, name: s.name }))
   }
 }
- 
+
 // Cycle de vie
 onMounted(() => {
   const img = new window.Image()
@@ -150,7 +155,7 @@ onMounted(() => {
   img.onload = () => {
     avatarImage.value = img
   }
-  
+
   // Supprimer la latence tactile
   const stage = Konva.stages?.[0];
   if (stage) {

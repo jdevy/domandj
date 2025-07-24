@@ -1,4 +1,7 @@
-import type { RectConfig, TextConfig, GroupConfig, ImageConfig } from 'konva/lib/Shape'
+import type { RectConfig } from 'konva/lib/shapes/Rect'
+import type { TextConfig } from 'konva/lib/shapes/Text'
+import type { GroupConfig } from 'konva/lib/Group'
+import type { ImageConfig } from 'konva/lib/shapes/Image'
 import type { Plot } from '@/models'
 
 export const evaluationButtonRect: RectConfig = {
@@ -36,6 +39,7 @@ export function defaultGroupPosition(x: number, y: number): GroupConfig {
     x,
     y,
     listening: true,
+    hitStrokeWidth: 40,
     cursor: 'pointer',
   }
 }
