@@ -1,12 +1,13 @@
 {
   "name": "domandj",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.0.1",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build && cp dist/index.html dist/404.html",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "postbuild": "node scripts/version-tag.cjs"
   },
   "dependencies": {
     "lucide": "^0.525.0",
