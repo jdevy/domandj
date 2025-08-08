@@ -1,45 +1,49 @@
 <template>
-    <div v-if="visible && form" class="modal-overlay" @click.self="emit('close')">
-        <div class="modal-content">
-            <button class="modal-close" @click="emit('close')">✕</button>
+  <div v-if="visible && modelValue" class="modal-overlay" @click.self="emit('close')">
+    <div class="modal-content">
+      <button class="modal-close" @click="handleClose">✕</button>
 
-            <h2>{{plotStudents.map(s => s.name).join(' / ')}}</h2>
-            <CompetenceToggle v-for="entry in form.competences" :key="entry.id"
-                :label="competenceList.find(c => c.id === entry.id)?.libelle_long || 'Compétence inconnue'"
-                v-model="entry.statut" />
-        </div>
+      <h2>{{ modelValue.students.map(s => s.name).join(' / ') }}</h2>
+
+      <CompetenceToggle
+        v-for="(entry, i) in modelValue.competences"
+        :key="entry.id"
+        :label="competenceList.find(c => c.id === entry.id)?.libelle_long || 'Compétence inconnue'"
+        :modelValue="entry.statut ?? null"
+        @update:modelValue="updateCompetence(i, $event)"
+      />
     </div>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { watch, computed } from 'vue'
-import debounce from 'lodash.debounce'
 import CompetenceToggle from './CompetenceToggle.vue'
-import { EvaluationForm } from '@/models';
+import { Plot, CompetenceStatus } from '@/models'
 
 const props = defineProps<{
-    visible: boolean
-    form: {
-        plotId: number
-        plotName: string
-        competences: { id: number; statut: boolean | null }[]
-    } | null
-    competenceList: { id: number; libelle_long: string; libelle_court: string; coeff: number }[]
-    students: any[]
+  modelValue: Plot | null
+  competenceList: CompetenceStatus[]
+  visible: boolean
 }>()
 
-const emit = defineEmits(['close'])
+const emit = defineEmits(['update:modelValue', 'close'])
 
-const plotStudents = computed(() => {
-    return props.students.filter(s => s.plotId === props.form?.plotId)
-})
+function handleClose() {
+  emit('close')
+}
 
-watch(() => props.form, debounce((newForm: EvaluationForm) => {
-    if (newForm) {
-        localStorage.setItem(`evaluation-${newForm.plotId}`, JSON.stringify(newForm))
-    }
-}, 300), { deep: true })
+function updateCompetence(index: number, statut: boolean | null) {
+  if (!props.modelValue) return
 
+  const updatedPlot: Plot = {
+    ...props.modelValue,
+    competences: props.modelValue.competences.map((c, i) =>
+      i === index ? { ...c, statut } : c
+    )
+  }
+
+  emit('update:modelValue', updatedPlot)
+}
 </script>
 
 <style scoped>
