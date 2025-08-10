@@ -1,5 +1,5 @@
 export interface CompetenceStatus {
-  id: string
+  id: number
   libelle_long: string
   libelle_court: string
   coeff: number

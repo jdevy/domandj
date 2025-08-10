@@ -12,8 +12,8 @@
 
                     <!-- "Bouton" Évaluation -->
                     <template v-if="hasStudents(plot, props.students)">
-                        <v-group :config="defaultGroupPosition(110, 100)" @click="() => emit('open-evaluation', plot)"
-                            @tap="() => emit('open-evaluation', plot)">
+                        <v-group :config="{ ...defaultGroupPosition(110, 100), hitStrokeWidth: 60, listening: true }"
+                            @click="handleEvaluationClick(plot, $event)" @tap="handleEvaluationClick(plot, $event)">
                             <v-rect :config="evaluationButtonRect" />
                             <v-text :config="evaluationButtonText" />
                         </v-group>
@@ -68,6 +68,11 @@ const highlightedPlotId = ref<number | null>(null)
 const plotBeingDeletedId = ref<number | null>(null)
 
 // Méthodes
+function handleEvaluationClick(plot: Plot, evt: any) {
+  evt.cancelBubble = true // bloque la propagation Konva
+  emit('open-evaluation', plot)
+}
+
 function getPlotForStudent(student: Student): Plot | undefined {
     return props.plots.find(p => p.id === student.plotId)
 }
@@ -242,6 +247,6 @@ function highlightPlotUnder(student: Student, event: DragKonvaEvent) {
 }
 
 .konva-container canvas {
-  touch-action: manipulation;
+    touch-action: manipulation;
 }
 </style>

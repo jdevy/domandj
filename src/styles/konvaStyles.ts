@@ -30,7 +30,7 @@ export const evaluationButtonText: TextConfig = {
     height: 44,
     offsetX: 0,
     offsetY: -2,
-    listening: false
+    listening: true
 }
 
 // Position du bouton
@@ -39,7 +39,7 @@ export function defaultGroupPosition(x: number, y: number): GroupConfig {
     x,
     y,
     listening: true,
-    hitStrokeWidth: 40,
+    hitStrokeWidth: 60,
     cursor: 'pointer',
   }
 }
