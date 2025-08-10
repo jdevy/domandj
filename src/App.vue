@@ -4,8 +4,12 @@
 
     <div class="class-selector" style="display: flex; align-items: center; gap: 10px;">
       <div style="display: flex; gap: 10px; flex-wrap: wrap; flex-grow: 1;">
-        <span v-for="(students, className) in classes" :key="className"
-          :class="['class-chip', { active: selectedClass === className }]" @click="selectClass(className)">
+        <span
+          v-for="(students, className) in classes"
+          :key="className"
+          :class="['class-chip', { active: selectedClass === className }]"
+          @click="selectClass(className)"
+        >
           {{ className }}
         </span>
       </div>
@@ -16,33 +20,45 @@
       </button>
     </div>
 
-    <div class="stage-container stage-position" ref="stageContainer">
+    <div class="main-content">
+      <div class="stage-container stage-position" ref="stageContainer">
+        <Konvaboard
+          :plots="plots"
+          :students="students"
+          :avatar-image="avatarImage"
+          :stage-size="stageSize"
+          @update:plots="plots = $event"
+          @update:students="students = reorderStudents($event)"
+          @delete-plot="deletePlot"
+          @open-evaluation="openEvaluation"
+        />
 
-      <Konvaboard :plots="plots" :students="students" :avatar-image="avatarImage" :stage-size="stageSize"
-        @update:plots="plots = $event" @update:students="students = $event" @delete-plot="deletePlot"
-        @open-evaluation="openEvaluation" />
+        <button class="round-icon-btn plus-btn bottom-left" @click="addPlot">
+          <LucidePlus size="24" />
+        </button>
 
-      <button class="round-icon-btn plus-btn bottom-left" @click="addPlot">
-        <LucidePlus size="24" />
-      </button>
-
-      <div class="round-icon-btn trash-zone bottom-right">
-        <LucideTrash size="24" />
+        <div class="round-icon-btn trash-zone bottom-right">
+          <LucideTrash size="24" />
+        </div>
       </div>
     </div>
 
-    <Evaluation v-if="showEvalModal && currentPlot" v-model="currentPlot" :competenceList="competences"
-      :visible="showEvalModal" @close="showEvalModal = false" />
+    <Evaluation
+      v-if="showEvalModal && currentPlot"
+      v-model="currentPlot"
+      :competenceList="competences"
+      :visible="showEvalModal"
+      @close="showEvalModal = false"
+    />
 
     <div v-if="showToast" class="toast-message">
       Classe réinitialisée
     </div>
 
-    <div class="version-indicator">
-      v{{ version }}
-    </div>
+    <div class="version-indicator">v{{ version }}</div>
   </div>
 </template>
+
 
 <script setup lang="ts">
 import { onMounted, onBeforeUnmount, ref, reactive, nextTick, computed, watch } from 'vue'
@@ -88,10 +104,10 @@ const students = ref<Student[]>([])
 const showToast = ref(false)
 
 // Méthodes
-function updatePlotEvaluation(updatedPlot: Plot) {
-  plots.value = plots.value.map(p =>
-    p.id === updatedPlot.id ? updatedPlot : p
-  )
+function reorderStudents(updatedList: Student[]): Student[] {
+  const free = updatedList.filter(s => !s.plotId);
+  const assigned = updatedList.filter(s => s.plotId);
+  return [...free, ...assigned];
 }
 
 function saveSnapshot() {

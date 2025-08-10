@@ -172,6 +172,8 @@ function updateStudentPosition(student: Student, event: DragKonvaEvent) {
         }
 
         highlightedPlotId.value = null
+        // 🔹 Émettre la liste mise à jour pour que le parent la réordonne
+        emit('update:students', props.students.slice())
     } catch (e) {
         console.error("Drag end error:", e)
     }
