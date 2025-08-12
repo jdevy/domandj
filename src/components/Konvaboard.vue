@@ -1,5 +1,5 @@
 <template>
-    <div class="stage-wrapper">
+    <div class="stage-wrapper konva-container">
         <v-stage :config="props.stageSize">
             <v-layer>
                 <!-- Plots -->
@@ -13,7 +13,9 @@
                     <!-- "Bouton" Évaluation -->
                     <template v-if="hasStudents(plot, props.students)">
                         <v-group :config="{ ...defaultGroupPosition(110, 100), hitStrokeWidth: 60, listening: true }"
-                            @click="handleEvaluationClick(plot, $event)" @tap="handleEvaluationClick(plot, $event)">
+                            @touchend.prevent="handleEvaluationClick(plot, $event)"
+                            @click="handleEvaluationClick(plot, $event)" 
+                            @tap="handleEvaluationClick(plot, $event)">
                             <v-rect :config="evaluationButtonRect" />
                             <v-text :config="evaluationButtonText" />
                         </v-group>
@@ -69,7 +71,7 @@ const plotBeingDeletedId = ref<number | null>(null)
 
 // Méthodes
 function handleEvaluationClick(plot: Plot, evt: any) {
-  evt.cancelBubble = true // bloque la propagation Konva
+  //evt.cancelBubble = true // bloque la propagation Konva
   emit('open-evaluation', plot)
 }
 

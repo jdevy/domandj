@@ -4,12 +4,8 @@
 
     <div class="class-selector" style="display: flex; align-items: center; gap: 10px;">
       <div style="display: flex; gap: 10px; flex-wrap: wrap; flex-grow: 1;">
-        <span
-          v-for="(students, className) in classes"
-          :key="className"
-          :class="['class-chip', { active: selectedClass === className }]"
-          @click="selectClass(className)"
-        >
+        <span v-for="(students, className) in classes" :key="className"
+          :class="['class-chip', { active: selectedClass === className }]" @click="selectClass(className)">
           {{ className }}
         </span>
       </div>
@@ -20,36 +16,22 @@
       </button>
     </div>
 
-    <div class="main-content">
-      <div class="stage-container stage-position" ref="stageContainer">
-        <Konvaboard
-          :plots="plots"
-          :students="students"
-          :avatar-image="avatarImage"
-          :stage-size="stageSize"
-          @update:plots="plots = $event"
-          @update:students="students = reorderStudents($event)"
-          @delete-plot="deletePlot"
-          @open-evaluation="openEvaluation"
-        />
+    <div class="stage-container stage-position" ref="stageContainer">
+      <Konvaboard :plots="plots" :students="students" :avatar-image="avatarImage" :stage-size="stageSize"
+        @update:plots="plots = $event" @update:students="students = reorderStudents($event)" @delete-plot="deletePlot"
+        @open-evaluation="openEvaluation" />
 
-        <button class="round-icon-btn plus-btn bottom-left" @click="addPlot">
-          <LucidePlus size="24" />
-        </button>
+      <button class="round-icon-btn plus-btn bottom-left" @click="addPlot">
+        <LucidePlus size="24" />
+      </button>
 
-        <div class="round-icon-btn trash-zone bottom-right">
-          <LucideTrash size="24" />
-        </div>
+      <div class="round-icon-btn trash-zone bottom-right">
+        <LucideTrash size="24" />
       </div>
     </div>
 
-    <Evaluation
-      v-if="showEvalModal && currentPlot"
-      v-model="currentPlot"
-      :competenceList="competences"
-      :visible="showEvalModal"
-      @close="showEvalModal = false"
-    />
+    <Evaluation v-if="showEvalModal && currentPlot" v-model="currentPlot" :competenceList="competences"
+      :visible="showEvalModal" @close="showEvalModal = false" />
 
     <div v-if="showToast" class="toast-message">
       Classe réinitialisée
