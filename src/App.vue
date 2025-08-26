@@ -2,10 +2,6 @@
   <div id="app">
     <h1>Evaluation TP</h1>
 
-
-     <KonvaTest />
-
-
     <div class="class-selector" style="display: flex; align-items: center; gap: 10px;">
       <div style="display: flex; gap: 10px; flex-wrap: wrap; flex-grow: 1;">
         <span v-for="(students, className) in classes" :key="className"
