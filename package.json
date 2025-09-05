@@ -1,7 +1,7 @@
 {
   "name": "domandj",
   "private": true,
-  "version": "0.0.10",
+  "version": "0.0.11",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -10,10 +10,12 @@
     "postbuild": "node scripts/version-tag.cjs"
   },
   "dependencies": {
+    "@mdi/font": "^7.4.47",
     "lucide": "^0.525.0",
     "lucide-vue-next": "^0.525.0",
     "vue": "^3.5.17",
-    "vue-konva": "^3.2.1"
+    "vue-konva": "^3.2.1",
+    "vuetify": "^3.9.6"
   },
   "devDependencies": {
     "@types/lodash.debounce": "^4.0.9",

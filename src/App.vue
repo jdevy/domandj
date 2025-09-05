@@ -14,7 +14,13 @@
       <button @click="resetClassData" title="Réinitialiser la classe" class="icon-btn">
         <LucideRefreshCw size="24" />
       </button>
+
+      <button @click="showClasseModal = true" class="icon-btn">
+        <LucideSettings size="24" /> Mes classes
+      </button>
+
     </div>
+
 
     <div class="stage-container stage-position" ref="stageContainer">
       <Konvaboard :plots="plots" :students="students" :avatar-image="avatarImage" :stage-size="stageSize"
@@ -37,6 +43,8 @@
       Classe réinitialisée
     </div>
 
+    <ClasseManager v-model:visible="showClasseModal" />
+
     <div class="version-indicator">v{{ version }}</div>
   </div>
 </template>
@@ -46,12 +54,12 @@
 import { onMounted, onBeforeUnmount, ref, reactive, nextTick, computed, watch } from 'vue'
 import Konva from 'konva'
 import debounce from 'lodash.debounce'
-import classData from './models/classData'
+import { classesStore, saveClasses } from '@/services/classeStorage'
 import competenceData from './models/competenceData'
 import avatarSrc from './assets/duck-icon.svg'
 import Konvaboard from './components/Konvaboard.vue'
 import Evaluation from './components/Evaluation.vue'
-import KonvaTest from './components/KonvaTest.vue'
+import ClasseManager from './components/ClasseManager.vue'
 import type { Plot, Student, EvaluationSnapshot } from '@/models'
 import { loadEvaluationSnapshotFromLocalStorage, saveEvaluationToLocalStorage } from '@/services/evaluationStorage'
 
@@ -62,11 +70,12 @@ const stageSize = reactive<{ width: number; height: number }>({
   height: window.innerHeight
 })
 
-const classes = classData
+const classes = classesStore
 const competences = competenceData
 const stageContainer = ref<HTMLElement | null>(null)
 const avatarImage = ref<HTMLImageElement | null>(null)
 const showEvalModal = ref(false)
+const showClasseModal = ref(false)
 const currentPlot = ref<Plot | null>(null)
 const allPlots = reactive<Record<string, Plot[]>>({})
 const plotCounters = reactive<Record<string, number>>({})
@@ -83,8 +92,26 @@ const selectedClass = ref('')
 const currentIndex = ref(1)
 const currentKey = computed(() => `evaluation-${selectedClass.value}-${currentIndex.value}`)
 const currentSnapshot = ref<EvaluationSnapshot | null>(null)
-const students = ref<Student[]>([])
+// const students = ref<Student[]>([])
 const showToast = ref(false)
+
+const students = computed<Student[]>({
+  get: () => {
+    // accès direct à la branche réactive
+    const raw = classesStore[selectedClass.value] ?? []
+
+    return raw.map((s, index) => ({
+      ...s,
+      x: (s as Student).x ?? (stageSize.width - 130),
+      y: (s as Student).y ?? (50 + index * 40),
+      plotId: (s as Student).plotId ?? null
+    }))
+  },
+  set: (val) => {
+    classesStore[selectedClass.value] = val
+    saveClasses()
+  }
+})
 
 // Méthodes
 function reorderStudents(updatedList: Student[]): Student[] {
@@ -139,8 +166,7 @@ function selectClass(className: string) {
     allPlots[className] = []
   }
 
-  // Réinitialise les étudiants saveFormToLocalStorageet le formulaire
-  students.value = []
+  // Réinitialise les étudiants saveFormToLocalStorage et le formulaire
   currentPlot.value = null
   showEvalModal.value = false
 
