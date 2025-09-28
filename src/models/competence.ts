@@ -1,4 +1,4 @@
-export interface CompetenceStatus {
+export interface Competence {
   id: number
   libelle_long: string
   libelle_court: string

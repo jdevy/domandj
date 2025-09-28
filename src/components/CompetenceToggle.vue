@@ -5,20 +5,20 @@
     </span>
     <div class="toggle-buttons">
       <button
-        :class="['icon-btn', { selected: modelValue === true }]"
-        @click="$emit('update:modelValue', true)"
+        :class="['icon-btn', { selected: value === true }]"
+        @click="$emit('update:value', true)"
       >
         <Check class="icon" />
       </button>
       <button
-        :class="['icon-btn', { selected: modelValue === false }]"
-        @click="$emit('update:modelValue', false)"
+        :class="['icon-btn', { selected: value === false }]"
+        @click="$emit('update:value', false)"
       >
         <X class="icon" />
       </button>
       <button
-        :class="['icon-btn', { selected: modelValue === null }]"
-        @click="$emit('update:modelValue', null)"
+        :class="['icon-btn', { selected: value === null }]"
+        @click="$emit('update:value', null)"
       >
         <Circle class="icon" />
       </button>
@@ -30,11 +30,11 @@
 import { Check, X, Circle } from 'lucide-vue-next'
 
 defineProps<{
-  modelValue: boolean | null
+  value: boolean | null
   label: string
 }>()
 
-defineEmits(['update:modelValue'])
+defineEmits(['update:value'])
 </script>
 
 <style scoped>

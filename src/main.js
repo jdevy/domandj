@@ -40,6 +40,7 @@ app.use(vuetify)
 // Composants Lucide
 app.component('LucideTrash', Trash)
 app.component('LucidePlus', Plus)
+app.component('LucidePlusCircle', Plus)
 app.component('LucideSettings', Settings)
 app.component('LucideRefreshCw', RefreshCw)
 

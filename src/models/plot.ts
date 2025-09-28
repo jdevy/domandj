@@ -1,4 +1,4 @@
-import type { CompetenceStatus } from './competence'
+import type { Competence } from './competence'
 import type { Student } from './student'
 
 export interface Plot {
@@ -8,10 +8,10 @@ export interface Plot {
   y: number
 
   // Liste des élèves affectés à ce plot
-  students: Student[]
+  students: number[]
 
-  // Statut de chaque compétence pour ce plot (≃ ancien EvaluationForm)
-  competences: CompetenceStatus[]
+  // Liste des compétences affectées à ce plot
+  evaluations: Record<number, boolean | null> // { competenceId: statut }
 }
 
 

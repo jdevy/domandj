@@ -1,229 +1,218 @@
 <template>
   <div id="app">
-    <h1>Evaluation TP</h1>
 
-    <div class="class-selector" style="display: flex; align-items: center; gap: 10px;">
-      <div style="display: flex; gap: 10px; flex-wrap: wrap; flex-grow: 1;">
-        <span v-for="(students, className) in classes" :key="className"
-          :class="['class-chip', { active: selectedClass === className }]" @click="selectClass(className)">
-          {{ className }}
-        </span>
-      </div>
+    <!-- Barre d'outils avec les boutons -->
+    <v-toolbar density="compact" class="mb-4">
+      <v-toolbar-title>Évaluation TP</v-toolbar-title>
 
-      <!-- Bouton réinitialiser -->
-      <button @click="resetClassData" title="Réinitialiser la classe" class="icon-btn">
-        <LucideRefreshCw size="24" />
-      </button>
+      <v-spacer></v-spacer>
 
-      <button @click="showClasseModal = true" class="icon-btn">
-        <LucideSettings size="24" /> Mes classes
-      </button>
+      <!-- Bouton Administration des classes -->
+      <v-tooltip text="Gérer les classes" location="bottom">
+        <template v-slot:activator="{ props }">
+          <v-btn v-bind="props" icon="mdi-account-group" variant="text" @click="showClasseModal = true" />
+        </template>
+      </v-tooltip>
 
-    </div>
+      <!-- Bouton Administration des compétences -->
+      <v-tooltip text="Gérer les compétences" location="bottom">
+        <template v-slot:activator="{ props }">
+          <v-btn v-bind="props" icon="mdi-star-circle" variant="text" @click="showCompetenceModal = true" />
+        </template>
+      </v-tooltip>
 
+      <!-- Bouton Nouvelle session -->
+      <v-tooltip text="Nouvelle session" location="bottom">
+        <template v-slot:activator="{ props }">
+          <v-btn v-bind="props" icon="mdi-plus-circle" variant="text" @click="showNewSessionModal = true"
+            :disabled="!hasClasses" />
+        </template>
+      </v-tooltip>
+
+      <!-- Sélecteur de session (si plusieurs sessions existent) -->
+      <v-menu v-if="hasMultipleSessions" location="bottom">
+        <template v-slot:activator="{ props }">
+          <v-btn v-bind="props" variant="text">
+            {{ currentSession?.name || 'Aucune session' }}
+            <v-icon end>mdi-chevron-down</v-icon>
+          </v-btn>
+        </template>
+        <v-list density="compact">
+          <v-list-item v-for="session in store.state.sessions" :key="session.id" @click="selectSession(session.id)">
+            <v-list-item-title>{{ session.name }}</v-list-item-title>
+            <v-list-item-subtitle>{{ session.className }} - {{ session.date }}</v-list-item-subtitle>
+          </v-list-item>
+        </v-list>
+      </v-menu>
+    </v-toolbar>
+    <div class="version-indicator">v {{ version }}</div>
 
     <div class="stage-container stage-position" ref="stageContainer">
-      <Konvaboard :plots="plots" :students="students" :avatar-image="avatarImage" :stage-size="stageSize"
-        @update:plots="plots = $event" @update:students="students = reorderStudents($event)" @delete-plot="deletePlot"
-        @open-evaluation="openEvaluation" />
+      <!-- Conteneur pour affichage du titre de la session courante -->
+      <div v-if="currentSession" class="session-header">
+        <h2 class="session-title">
+          {{ currentSession.name }} - ({{ currentSession.className }})
+        </h2>
+        <v-tooltip text="Réinitialiser la classe" location="bottom">
+          <template v-slot:activator="{ props }">
+            <v-btn v-bind="props" icon="mdi-refresh" variant="text" color="grey-darken-1" class="reset-button"
+              @click="resetClassData" />
+          </template>
+        </v-tooltip>
+      </div>
 
+      <Konvaboard :plots="plots" :students="students" :avatar-image="avatarImage" :stage-size="stageSize"
+        @delete-plot="deletePlot" @open-evaluation="openEvaluation" />
       <button class="round-icon-btn plus-btn bottom-left" @click="addPlot">
         <LucidePlus size="24" />
       </button>
-
       <div class="round-icon-btn trash-zone bottom-right">
         <LucideTrash size="24" />
       </div>
     </div>
 
-    <Evaluation v-if="showEvalModal && currentPlot" v-model="currentPlot" :competenceList="competences"
-      :visible="showEvalModal" @close="showEvalModal = false" />
+    <Evaluation v-if="showEvalModal && currentPlot" v-model:plot-value="currentPlot" :visible="showEvalModal"
+      @close="showEvalModal = false" />
 
     <div v-if="showToast" class="toast-message">
-      Classe réinitialisée
+      {{ toastMessage }}
     </div>
 
     <ClasseManager v-model:visible="showClasseModal" />
 
-    <div class="version-indicator">v{{ version }}</div>
+    <NewSessionModal v-model:visible="showNewSessionModal" :classes="Object.keys(store.state.classes)"
+      :competences="store.state.competences" @create="createNewSession" />
+
+    <CompetenceManager v-model:visible="showCompetenceModal" />
+
+
+    <!-- <div class="version-indicator">v{{ version }}</div> -->
   </div>
 </template>
-
 
 <script setup lang="ts">
 import { onMounted, onBeforeUnmount, ref, reactive, nextTick, computed, watch } from 'vue'
 import Konva from 'konva'
-import debounce from 'lodash.debounce'
-import { classesStore, saveClasses } from '@/services/classeStorage'
+import { useEvaluationStore } from './stores/evaluationStore'
 import competenceData from './models/competenceData'
 import avatarSrc from './assets/duck-icon.svg'
 import Konvaboard from './components/Konvaboard.vue'
 import Evaluation from './components/Evaluation.vue'
 import ClasseManager from './components/ClasseManager.vue'
-import type { Plot, Student, EvaluationSnapshot } from '@/models'
-import { loadEvaluationSnapshotFromLocalStorage, saveEvaluationToLocalStorage } from '@/services/evaluationStorage'
+import NewSessionModal from './components/NewSessionModal.vue'
+import CompetenceManager from '@/components/CompetenceManager.vue'
+
+import type { Plot, Student } from '@/models'
 
 const version = import.meta.env.PACKAGE_VERSION
-// Données réactives
-const stageSize = reactive<{ width: number; height: number }>({
-  width: window.innerWidth,
-  height: window.innerHeight
-})
+const store = useEvaluationStore()
 
-const classes = classesStore
-const competences = competenceData
+// Données réactives
+const stageSize = reactive({ width: window.innerWidth, height: window.innerHeight })
 const stageContainer = ref<HTMLElement | null>(null)
 const avatarImage = ref<HTMLImageElement | null>(null)
 const showEvalModal = ref(false)
 const showClasseModal = ref(false)
+const showCompetenceModal = ref(false)
 const currentPlot = ref<Plot | null>(null)
-const allPlots = reactive<Record<string, Plot[]>>({})
-const plotCounters = reactive<Record<string, number>>({})
-
-const plots = computed<Plot[]>({
-  get: () => allPlots[selectedClass.value] || [],
-  set: val => {
-    allPlots[selectedClass.value] = val
-  }
-})
-
-const nextPlotId = ref(3)
-const selectedClass = ref('')
-const currentIndex = ref(1)
-const currentKey = computed(() => `evaluation-${selectedClass.value}-${currentIndex.value}`)
-const currentSnapshot = ref<EvaluationSnapshot | null>(null)
-// const students = ref<Student[]>([])
 const showToast = ref(false)
+const toastMessage = ref('')
+const showNewSessionModal = ref(false)
 
-const students = computed<Student[]>({
-  get: () => {
-    // accès direct à la branche réactive
-    const raw = classesStore[selectedClass.value] ?? []
-
-    return raw.map((s, index) => ({
-      ...s,
-      x: (s as Student).x ?? (stageSize.width - 130),
-      y: (s as Student).y ?? (50 + index * 40),
-      plotId: (s as Student).plotId ?? null
-    }))
-  },
-  set: (val) => {
-    classesStore[selectedClass.value] = val
-    saveClasses()
-  }
+// Données calculées
+const currentSession = computed(() => store.getCurrentSession())
+const plots = computed(() => currentSession.value?.plotGroups || [])
+const students = computed(() => {
+  return currentSession.value
+    ? store.state.classes[currentSession.value.className] || []
+    : []
 })
+
+const filteredCompetences = computed(() => {
+  return currentSession.value
+    ? competenceData.filter(comp =>
+      currentSession.value?.selectedCompetenceIds.includes(comp.id)
+    )
+    : competenceData
+})
+const hasMultipleSessions = computed(() => store.state.sessions.length > 1)
+const hasClasses = computed(() => Object.keys(store.state.classes).length > 0)
+
+
 
 // Méthodes
-function reorderStudents(updatedList: Student[]): Student[] {
-  const free = updatedList.filter(s => !s.plotId);
-  const assigned = updatedList.filter(s => s.plotId);
-  return [...free, ...assigned];
-}
-
-function saveSnapshot() {
-  const snapshot: EvaluationSnapshot = {
-    classeId: selectedClass.value,
-    classeName: selectedClass.value,
-    students: students.value,
-    competences,
-    plots: plots.value
-  }
-  saveEvaluationToLocalStorage(currentKey.value, snapshot)
-  console.log('💾 Auto-sauvegarde pour', currentKey.value)
-}
-
-// Watch sur plots (position + contenu)
-watch(
-  () => plots.value,
-  debounce(saveSnapshot, 500),
-  { deep: true }
-)
-
-// Watch sur affectation des élèves aux plots
-watch(
-  () => students.value.map(s => s.plotId),
-  debounce(saveSnapshot, 500),
-  { deep: true }
-)
-
-watch(currentPlot, (newVal) => {
-  if (!newVal) return
-  plots.value = plots.value.map(p =>
-    p.id === newVal.id ? newVal : p
-  )
-}, { deep: true })
-
-function selectClass(className: string) {
-  selectedClass.value = className
-
-  // Initialise le compteur de plot si pas encore fait
-  if (!plotCounters[className]) {
-    plotCounters[className] = 1
-  }
-
-  // Initialise les plots si pas encore fait
-  if (!allPlots[className]) {
-    allPlots[className] = []
-  }
-
-  // Réinitialise les étudiants saveFormToLocalStorage et le formulaire
-  currentPlot.value = null
-  showEvalModal.value = false
-
-  // Attendre que le DOM soit mis à jour avant de nettoyer
-  nextTick(() => {
-    currentPlot.value = null
+function createNewSession(sessionData: {
+  className: string,
+  sessionName: string,
+  competenceIds: number[]
+}) {
+  // Créer la nouvelle session
+  const newSession = store.createSession({
+    name: sessionData.sessionName,
+    className: sessionData.className,
+    selectedCompetenceIds: sessionData.competenceIds,
+    date: new Date().toISOString().split('T')[0],
   })
 
-  // Chargement snapshot ici
-  const snapshot = loadEvaluationSnapshotFromLocalStorage(currentKey.value)
-  if (snapshot) {
-    currentSnapshot.value = snapshot
-    students.value = snapshot.students
-    plots.value = snapshot.plots
-  } else {
-    loadStudents()
+  // Positionner les élèves (appel à loadStudents)
+  loadStudents()
+
+  // Fermer la modale
+  showNewSessionModal.value = false
+}
+
+
+function selectClass(className: string) {
+  // Trouver ou créer une séance pour cette classe
+  let session = store.state.sessions.find(s => s.className === className)
+
+  if (!session) {
+    session = store.createSession({
+      name: `Séance pour ${className}`,
+      className: className,
+      selectedCompetenceIds: competenceData.map(c => c.id),
+      date: new Date().toISOString().split('T')[0],
+    })
   }
+
+  store.setCurrentSession(session.id)
 }
 
 function addPlot(): void {
-  const className = selectedClass.value
-  if (!plotCounters[className]) {
-    plotCounters[className] = 1
-  }
+  const session = store.getCurrentSession()
+  if (!session) return
 
-  const id = plotCounters[className]
-  const name = `Plot ${String.fromCharCode(64 + id)}`
   const newPlot: Plot = {
-    id,
-    name,
-    x: 100 + id * 20,
-    y: 200 + id * 20,
+    id: session.plotGroups.length > 0
+      ? Math.max(...session.plotGroups.map(p => p.id)) + 1
+      : 1,
+    name: `Plot ${session.plotGroups.length + 1}`,
+    x: 100 + session.plotGroups.length * 50,
+    y: 200,
     students: [],
-    competences: competences.map(c => ({
-      ...c,
-      statut: null
-    }))
+    evaluations: {},
   }
-
-  plots.value = [...plots.value, newPlot]
-  plotCounters[className]++
+  session.plotGroups.push(newPlot)
 }
-
+function selectSession(sessionId: string) {
+  store.setCurrentSession(sessionId)
+}
 function deletePlot(plotId: number): void {
-  plots.value = plots.value.filter(p => p.id !== plotId)
+  const session = store.getCurrentSession()
+  if (!session) return
+  session.plotGroups = session.plotGroups.filter(p => p.id !== plotId)
 }
 
 function loadStudents() {
-  if (!avatarImage.value) {
-    setTimeout(() => loadStudents(), 100)
-    return
-  }
+  const session = store.getCurrentSession()
+  if (!session) return
 
+  const className = session.className
+  const classStudents = store.state.classes[className] || []
   const baseX = stageSize.width - 130
   const baseY = 50
 
-  students.value = classes[selectedClass.value].map((student, index) => ({
+  store.state.classes[className] = classStudents.map((student, index) => ({
     ...student,
     x: baseX,
     y: baseY + index * 40,
@@ -231,22 +220,16 @@ function loadStudents() {
   }))
 }
 
-function resizeStage() {
-  if (!stageContainer.value) return
-
-  const rect = stageContainer.value.getBoundingClientRect()
-  const padding = 20
-
-  stageSize.width = rect.width
-  stageSize.height = window.innerHeight - rect.top - padding
-}
-
 function openEvaluation(plot: Plot): void {
   showEvalModal.value = false
+  const currentStudentIds = students.value
+    .filter(s => s.plotId === plot.id)  // Filtrer les élèves dont plotId correspond
+    .map(s => s.id)                      // Extraire les IDs
 
-  // Associe les étudiants assignés à ce plot
-  const assignedStudents = students.value.filter(s => s.plotId === plot.id)
-  plot.students = assignedStudents
+  // // Create an array of Student objects based on the currentStudentIds
+  // const currentStudents: Student[] = students.value.filter((s: Student) => currentStudentIds.includes(s.id));
+
+  plot.students = currentStudentIds;
 
   nextTick(() => {
     currentPlot.value = plot
@@ -254,82 +237,83 @@ function openEvaluation(plot: Plot): void {
   })
 }
 
+
 function resetClassData() {
-  if (!selectedClass.value) {
-    alert('Aucune classe sélectionnée.')
+  const session = store.getCurrentSession()
+  if (!session) {
+    alert('Aucune séance active.')
     return
   }
 
-  // Confirme la suppression
-  if (!confirm(`Voulez-vous vraiment réinitialiser les données pour la classe "${selectedClass.value}" ?`)) {
+  if (!confirm(`Voulez-vous vraiment réinitialiser les données pour la séance "${session.name}" ?`)) {
     return
   }
 
-  // Supprime la clé dans localStorage
-  localStorage.removeItem(currentKey.value)
-
-  // Reset des données locales dans l’app
-  plots.value = []
+  session.plotGroups = []
+  loadStudents()
   currentPlot.value = null
   showEvalModal.value = false
-
-  // Réinitialise le compteur de plots
-  plotCounters[selectedClass.value] = 1
-
-  // Remet à jour la liste des étudiants avec leur position initiale
-  if (!avatarImage.value) {
-    setTimeout(resetClassData, 100) // attend que avatarImage soit chargé
-    return
-  }
-
-  const baseX = stageSize.width - 130
-  const baseY = 50
-
-  students.value = classes[selectedClass.value].map((student, index) => ({
-    ...student,
-    x: baseX,
-    y: baseY + index * 40,
-    plotId: null
-  }))
-
-  console.log(`Données de la classe ${selectedClass.value} réinitialisées.`)
-  triggerToast()
+  triggerToast(`Séance "${session.name}" réinitialisée`)
 }
 
-function triggerToast(message = 'Classe réinitialisée') {
+function triggerToast(message: string) {
+  toastMessage.value = message
   showToast.value = true
-  setTimeout(() => {
-    showToast.value = false
-  }, 2000) // Affiché 2 secondes
+  setTimeout(() => showToast.value = false, 2000)
+}
+
+function resizeStage() {
+  if (!stageContainer.value) return
+  const rect = stageContainer.value.getBoundingClientRect()
+  const padding = 20
+  stageSize.width = rect.width
+  stageSize.height = window.innerHeight - rect.top - padding
 }
 
 // Cycle de vie
 onMounted(() => {
   const img = new window.Image()
   img.src = avatarSrc
-  img.onload = () => {
-    avatarImage.value = img
-  }
+  img.onload = () => { avatarImage.value = img }
 
-  // Supprimer la latence tactile
-  const stage = Konva.stages?.[0];
-  if (stage) {
-    stage.setAttr('dragDistance', 0);
+  const stage = Konva.stages?.[0]
+  if (stage) stage.setAttr('dragDistance', 0)
+
+  // Créer une séance par défaut si aucune n'existe
+  if (store.state.sessions.length === 0) {
+    const defaultClass = Object.keys(store.state.classes)[0]
+    if (defaultClass) {
+      addPlot
+      store.createSession({
+        name: `Séance par défaut - ${defaultClass}`,
+        className: defaultClass,
+        selectedCompetenceIds: competenceData.map(c => c.id),
+        date: new Date().toISOString().split('T')[0],
+      })
+    }
   }
 
   nextTick(() => {
     resizeStage()
     window.addEventListener('resize', resizeStage)
   })
-
-  // Déclenche le chargement de la première classe automatiquement
-  const defaultClass = Object.keys(classes)[0]
-  if (defaultClass) {
-    selectClass(defaultClass)
-  }
 })
 
 onBeforeUnmount(() => {
   window.removeEventListener('resize', resizeStage)
 })
 </script>
+
+<style scoped>
+.session-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 16px;
+  /* margin-bottom: 8px; */
+}
+
+.reset-button {
+  margin-left: auto;
+}
+</style>

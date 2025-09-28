@@ -1,5 +1,5 @@
 export * from './plot'
 export * from './student'
 export * from './competence'
-export * from './evaluationSnapshot'
 export * from './konva'
+export * from './session'

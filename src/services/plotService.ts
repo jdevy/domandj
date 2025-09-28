@@ -1,9 +1,8 @@
-import { Plot, Student } from '@/models'
+import type { Plot } from '@/models'
+import { useEvaluationStore } from '@/stores/evaluationStore'
 
-export function getStudentsForPlot(plot: Plot, allStudents: Student[]): Student[] {
-  return allStudents.filter(s => s.plotId === plot.id)
-}
-
-export function hasStudents(plot: Plot, allStudents: Student[]): boolean {
-  return getStudentsForPlot(plot, allStudents).length > 0
+export function hasStudents(plot: Plot): boolean {
+  // Un plot a des étudiants si son tableau students n'est pas vide
+  // (plot.students est un tableau d'IDs d'étudiants)
+  return plot.students.length > 0
 }
