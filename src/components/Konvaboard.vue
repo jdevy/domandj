@@ -3,15 +3,12 @@
     <v-stage :config="stageSize">
       <v-layer>
         <!-- Plots -->
-        <v-group v-for="plot in currentSession?.plotGroups" :key="plot.id"
-          :config="{
-            x: plot.x,
-            y: plot.y,
-            draggable: true,
-            dragBoundFunc: limitPlotToBounds
-          }"
-          @dragmove="updatePlotPosition(plot, $event)"
-          @dragend="updatePlotPosition(plot, $event)">
+        <v-group v-for="plot in currentSession?.plotGroups" :key="plot.id" :config="{
+          x: plot.x,
+          y: plot.y,
+          draggable: true,
+          dragBoundFunc: limitPlotToBounds
+        }" @dragmove="updatePlotPosition(plot, $event)" @dragend="updatePlotPosition(plot, $event)">
 
           <!-- Affichage du plot -->
           <v-rect :config="getPlotRectStyle(plot, highlightedPlotId === plot.id, plotBeingDeletedId === plot.id)" />
@@ -36,14 +33,11 @@
         </v-group>
 
         <!-- Élèves -->
-        <v-group v-for="(student, index) in currentStudents" :key="student.id"
-          :config="{
-            ...getStudentPosition(student, index),
-            draggable: true,
-            dragBoundFunc: limitStudentToBounds
-          }"
-          @dragmove="highlightPlotUnder(student, $event)"
-          @dragend="updateStudentPosition(student, $event)">
+        <v-group v-for="(student, index) in currentStudents" :key="student.id" :config="{
+          ...getStudentPosition(student, index),
+          draggable: true,
+          dragBoundFunc: limitStudentToBounds
+        }" @dragmove="highlightPlotUnder(student, $event)" @dragend="updateStudentPosition(student, $event)">
 
           <v-image v-if="avatarImage" :config="getStudentAvatarStyle(avatarImage)" />
 
@@ -68,6 +62,7 @@ import {
   getStudentLabelRectStyle, getStudentLabelTextStyle
 } from '@/styles/konvaStyles'
 import { useEvaluationStore } from '@/stores/evaluationStore'
+import { debounce } from 'lodash'
 
 // Props
 const props = defineProps({
@@ -165,115 +160,78 @@ function updatePlotPosition(plot: Plot, event: DragKonvaEvent) {
   }
 }
 
-// Dans ClasseManager.vue ou KonvaBoard.vue
-function updateStudentPosition(student: Student, event: DragKonvaEvent) {
-  const group = event.target
-  const pos = group.getAbsolutePosition()
-  if (!pos) return
+// Remplace ta fonction actuelle par celle-ci
+const updateStudentPosition = debounce((student: Student, event: DragKonvaEvent) => {
+  const group = event.target;
+  const pos = group.getAbsolutePosition();
+  if (!pos) return;
 
-  const session = store.getCurrentSession()
-  if (!session) return
+  const session = store.getCurrentSession();
+  if (!session) return;
 
-  // Mettre à jour la position de l'étudiant
+  // Trouver le plot sous l'étudiant avec une marge de magnétisme
+  const MAGNET_MARGIN = 20;
+  const plot = getPlotUnderStudent(pos);
+
+  // Créer une copie de l'étudiant mis à jour
   const updatedStudent: Student = {
     ...student,
     x: pos.x,
     y: pos.y
-  }
+  };
 
-  // Trouver le plot sous l'étudiant
-  const plot = session.plotGroups.find(p =>
-    pos.x >= p.x && pos.x <= p.x + 130 &&
-    pos.y >= p.y && pos.y <= p.y + 130
-  )
+  // Trouver l'ancien plot si l'étudiant en avait un
+  const oldPlot = session.plotGroups.find(p => p.students.includes(student.id));
 
   if (plot) {
-    updatedStudent.plotId = plot.id
-    // Ajouter l'étudiant au plot si ce n'est pas déjà fait
+    // Nouvel emplacement: un plot
+    updatedStudent.plotId = plot.id;
+
+    // Ajouter à la liste des étudiants du nouveau plot
     if (!plot.students.includes(student.id)) {
-      plot.students.push(student.id)
+      plot.students.push(student.id);
+    }
+
+    // Retirer de l'ancien plot si différent
+    if (oldPlot && oldPlot.id !== plot.id) {
+      oldPlot.students = oldPlot.students.filter(id => id !== student.id);
     }
   } else {
-    updatedStudent.plotId = null
-    // Retirer l'étudiant de tous les plots
+    // Nouvel emplacement: hors des plots
+    updatedStudent.plotId = null;
+
+    // Retirer de tous les plots
     session.plotGroups.forEach(p => {
-      p.students = p.students.filter(id => id !== student.id)
-    })
+      p.students = p.students.filter(id => id !== student.id);
+    });
   }
 
-  // Mettre à jour dans le store
-  const className = session.className
-  const classStudents = store.state.classes[className] || []
-  const studentIndex = classStudents.findIndex(s => s.id === student.id)
+  // Mettre à jour la position de l'étudiant dans le store
+  const className = session.className;
+  const classStudents = store.state.classes[className] || [];
+  const studentIndex = classStudents.findIndex(s => s.id === student.id);
   if (studentIndex !== -1) {
-    store.state.classes[className][studentIndex] = updatedStudent
+    store.state.classes[className][studentIndex] = updatedStudent;
   }
-  
-  highlightedPlotId.value = null
+
+  highlightedPlotId.value = null;
+}, 16);
+
+
+
+function getPlotUnderStudent(pos: Position): Plot | null {
+  if (!currentSession.value) return null
+
+  const width = 40
+  const height = 40
+  const centerX = pos.x + width / 2
+  const centerY = pos.y + height / 2
+
+  return currentSession.value.plotGroups.find(p =>
+    centerX >= p.x && centerX <= p.x + 130 &&
+    centerY >= p.y && centerY <= p.y + 130
+  ) || null
 }
-
-
-// function updateStudentPosition(student: Student, event: DragKonvaEvent) {
-//   const group = event.target
-//   const pos = group.getAbsolutePosition()
-//   if (!pos) return
-
-//   const width = 40
-//   const height = 40
-//   const centerX = pos.x + width / 2
-//   const centerY = pos.y + height / 2
-
-//   const session = store.getCurrentSession()
-//   if (!session) return
-
-//   // Trouver le plot sous le student
-//   const plot = session.plotGroups.find(p =>
-//     centerX >= p.x && centerX <= p.x + 130 &&
-//     centerY >= p.y && centerY <= p.y + 130
-//   )
-
-//   // Créer une copie modifiable de l'étudiant
-//   const updatedStudent: Student = {
-//     ...student,
-//     x: pos.x,
-//     y: pos.y
-//   }
-
-//   if (plot) {
-//     // Assigner à un plot
-//     updatedStudent.plotId = plot.id
-
-//     // Ajouter l'étudiant au plot si ce n'est pas déjà fait
-//     if (!plot.students.includes(student.id)) {
-//       const plotIndex = session.plotGroups.findIndex(p => p.id === plot.id)
-//       if (plotIndex !== -1) {
-//         // On stocke seulement les IDs des étudiants dans le plot
-//         if (!session.plotGroups[plotIndex].students.includes(student.id)) {
-//           session.plotGroups[plotIndex].students.push(student.id)
-//         }
-//       }
-//     }
-//   } else {
-//     // Retirer du plot
-//     updatedStudent.plotId = null
-
-//     // Retirer l'étudiant de tous les plots
-//     session.plotGroups.forEach(plot => {
-//       plot.students = plot.students.filter(id => id !== student.id)
-//     })
-//   }
-
-//   // Mettre à jour l'étudiant dans le store
-//   const className = session.className
-//   const classStudents = store.state.classes[className] || []
-//   const studentIndex = classStudents.findIndex(s => s.id === student.id)
-
-//   if (studentIndex !== -1) {
-//     store.state.classes[className][studentIndex] = updatedStudent
-//   }
-
-//   highlightedPlotId.value = null
-// }
 
 function limitPlotToBounds(pos: Position): Position {
   const plotWidth = 130
@@ -303,16 +261,7 @@ function highlightPlotUnder(student: Student, event: DragKonvaEvent) {
   const pos = group.getAbsolutePosition()
   if (!pos) return
 
-  const width = 40
-  const height = 40
-  const centerX = pos.x + width / 2
-  const centerY = pos.y + height / 2
-
-  const plot = currentSession.value?.plotGroups.find(p =>
-    centerX >= p.x && centerX <= p.x + 130 &&
-    centerY >= p.y && centerY <= p.y + 130
-  )
-
+  const plot = getPlotUnderStudent(pos)
   highlightedPlotId.value = plot ? plot.id : null
 }
 
