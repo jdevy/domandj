@@ -1,4 +1,4 @@
-import type { Competence } from './competence'
+import type { Competence } from '@/models'
 import data from '../data/competences.json'
 
 const competencesData = data.default as Competence[]

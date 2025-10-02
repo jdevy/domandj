@@ -165,67 +165,115 @@ function updatePlotPosition(plot: Plot, event: DragKonvaEvent) {
   }
 }
 
+// Dans ClasseManager.vue ou KonvaBoard.vue
 function updateStudentPosition(student: Student, event: DragKonvaEvent) {
   const group = event.target
   const pos = group.getAbsolutePosition()
   if (!pos) return
 
-  const width = 40
-  const height = 40
-  const centerX = pos.x + width / 2
-  const centerY = pos.y + height / 2
-
   const session = store.getCurrentSession()
   if (!session) return
 
-  // Trouver le plot sous le student
-  const plot = session.plotGroups.find(p =>
-    centerX >= p.x && centerX <= p.x + 130 &&
-    centerY >= p.y && centerY <= p.y + 130
-  )
-
-  // Créer une copie modifiable de l'étudiant
+  // Mettre à jour la position de l'étudiant
   const updatedStudent: Student = {
     ...student,
     x: pos.x,
     y: pos.y
   }
 
-  if (plot) {
-    // Assigner à un plot
-    updatedStudent.plotId = plot.id
+  // Trouver le plot sous l'étudiant
+  const plot = session.plotGroups.find(p =>
+    pos.x >= p.x && pos.x <= p.x + 130 &&
+    pos.y >= p.y && pos.y <= p.y + 130
+  )
 
+  if (plot) {
+    updatedStudent.plotId = plot.id
     // Ajouter l'étudiant au plot si ce n'est pas déjà fait
     if (!plot.students.includes(student.id)) {
-      const plotIndex = session.plotGroups.findIndex(p => p.id === plot.id)
-      if (plotIndex !== -1) {
-        // On stocke seulement les IDs des étudiants dans le plot
-        if (!session.plotGroups[plotIndex].students.includes(student.id)) {
-          session.plotGroups[plotIndex].students.push(student.id)
-        }
-      }
+      plot.students.push(student.id)
     }
   } else {
-    // Retirer du plot
     updatedStudent.plotId = null
-
     // Retirer l'étudiant de tous les plots
-    session.plotGroups.forEach(plot => {
-      plot.students = plot.students.filter(id => id !== student.id)
+    session.plotGroups.forEach(p => {
+      p.students = p.students.filter(id => id !== student.id)
     })
   }
 
-  // Mettre à jour l'étudiant dans le store
+  // Mettre à jour dans le store
   const className = session.className
   const classStudents = store.state.classes[className] || []
   const studentIndex = classStudents.findIndex(s => s.id === student.id)
-
   if (studentIndex !== -1) {
     store.state.classes[className][studentIndex] = updatedStudent
   }
-
+  
   highlightedPlotId.value = null
 }
+
+
+// function updateStudentPosition(student: Student, event: DragKonvaEvent) {
+//   const group = event.target
+//   const pos = group.getAbsolutePosition()
+//   if (!pos) return
+
+//   const width = 40
+//   const height = 40
+//   const centerX = pos.x + width / 2
+//   const centerY = pos.y + height / 2
+
+//   const session = store.getCurrentSession()
+//   if (!session) return
+
+//   // Trouver le plot sous le student
+//   const plot = session.plotGroups.find(p =>
+//     centerX >= p.x && centerX <= p.x + 130 &&
+//     centerY >= p.y && centerY <= p.y + 130
+//   )
+
+//   // Créer une copie modifiable de l'étudiant
+//   const updatedStudent: Student = {
+//     ...student,
+//     x: pos.x,
+//     y: pos.y
+//   }
+
+//   if (plot) {
+//     // Assigner à un plot
+//     updatedStudent.plotId = plot.id
+
+//     // Ajouter l'étudiant au plot si ce n'est pas déjà fait
+//     if (!plot.students.includes(student.id)) {
+//       const plotIndex = session.plotGroups.findIndex(p => p.id === plot.id)
+//       if (plotIndex !== -1) {
+//         // On stocke seulement les IDs des étudiants dans le plot
+//         if (!session.plotGroups[plotIndex].students.includes(student.id)) {
+//           session.plotGroups[plotIndex].students.push(student.id)
+//         }
+//       }
+//     }
+//   } else {
+//     // Retirer du plot
+//     updatedStudent.plotId = null
+
+//     // Retirer l'étudiant de tous les plots
+//     session.plotGroups.forEach(plot => {
+//       plot.students = plot.students.filter(id => id !== student.id)
+//     })
+//   }
+
+//   // Mettre à jour l'étudiant dans le store
+//   const className = session.className
+//   const classStudents = store.state.classes[className] || []
+//   const studentIndex = classStudents.findIndex(s => s.id === student.id)
+
+//   if (studentIndex !== -1) {
+//     store.state.classes[className][studentIndex] = updatedStudent
+//   }
+
+//   highlightedPlotId.value = null
+// }
 
 function limitPlotToBounds(pos: Position): Position {
   const plotWidth = 130

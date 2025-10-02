@@ -73,26 +73,53 @@ function getCompetenceStatus(competenceId: number): boolean | null {
 }
 
 // Mettre à jour une compétence
+// function updateCompetence(competenceId: number, statut: boolean | null) {
+//   if (!currentPlot.value) return
+//   const session = store.getCurrentSession()
+//   if (!session) return
+
+//   const plotIndex = session.plotGroups.findIndex(p => p.id === currentPlot.value?.id)
+//   if (plotIndex !== -1) {
+//     const updatedEvaluations = {
+//       ...session.plotGroups[plotIndex].evaluations,
+//       [competenceId]: statut
+//     }
+
+//     session.plotGroups[plotIndex] = {
+//       ...session.plotGroups[plotIndex],
+//       evaluations: updatedEvaluations
+//     }
+
+//     emit('update:plotValue', session.plotGroups[plotIndex])
+//   }
+// }
+
+// Dans Evaluation.vue
 function updateCompetence(competenceId: number, statut: boolean | null) {
   if (!currentPlot.value) return
+
   const session = store.getCurrentSession()
   if (!session) return
 
   const plotIndex = session.plotGroups.findIndex(p => p.id === currentPlot.value?.id)
   if (plotIndex !== -1) {
+    // Créer une nouvelle copie des évaluations
     const updatedEvaluations = {
       ...session.plotGroups[plotIndex].evaluations,
       [competenceId]: statut
     }
 
+    // Mettre à jour le plot
     session.plotGroups[plotIndex] = {
       ...session.plotGroups[plotIndex],
       evaluations: updatedEvaluations
     }
 
+    // Émettre la mise à jour
     emit('update:plotValue', session.plotGroups[plotIndex])
   }
 }
+
 
 function handleClose() {
   emit('close')

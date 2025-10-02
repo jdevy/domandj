@@ -1,7 +1,7 @@
-import type { Competence } from './competence'
-import type { Student } from './student'
+//import type { Competence } from './competence'
+//import type { Student } from './student'
 
-export interface Plot {
+//export interface Plot {
   id: number
   name: string
   x: number
@@ -12,7 +12,7 @@ export interface Plot {
 
   // Liste des compétences affectées à ce plot
   evaluations: Record<number, boolean | null> // { competenceId: statut }
-}
+//}
 
 
 

@@ -162,21 +162,21 @@ function createNewSession(sessionData: {
 }
 
 
-function selectClass(className: string) {
-  // Trouver ou créer une séance pour cette classe
-  let session = store.state.sessions.find(s => s.className === className)
+// function selectClass(className: string) {
+//   // Trouver ou créer une séance pour cette classe
+//   let session = store.state.sessions.find(s => s.className === className)
 
-  if (!session) {
-    session = store.createSession({
-      name: `Séance pour ${className}`,
-      className: className,
-      selectedCompetenceIds: competenceData.map(c => c.id),
-      date: new Date().toISOString().split('T')[0],
-    })
-  }
+//   if (!session) {
+//     session = store.createSession({
+//       name: `Séance pour ${className}`,
+//       className: className,
+//       selectedCompetenceIds: competenceData.map(c => c.id),
+//       date: new Date().toISOString().split('T')[0],
+//     })
+//   }
 
-  store.setCurrentSession(session.id)
-}
+//   store.setCurrentSession(session.id)
+// }
 
 function addPlot(): void {
   const session = store.getCurrentSession()
@@ -271,33 +271,64 @@ function resizeStage() {
 }
 
 // Cycle de vie
+// onMounted(() => {
+//   const img = new window.Image()
+//   img.src = avatarSrc
+//   img.onload = () => { avatarImage.value = img }
+
+//   const stage = Konva.stages?.[0]
+//   if (stage) stage.setAttr('dragDistance', 0)
+
+//   // Créer une séance par défaut si aucune n'existe
+//   if (store.state.sessions.length === 0) {
+//     const defaultClass = Object.keys(store.state.classes)[0]
+//     if (defaultClass) {
+//       addPlot
+//       store.createSession({
+//         name: `Séance par défaut - ${defaultClass}`,
+//         className: defaultClass,
+//         selectedCompetenceIds: competenceData.map(c => c.id),
+//         date: new Date().toISOString().split('T')[0],
+//       })
+//     }
+//   }
+
+//   nextTick(() => {
+//     resizeStage()
+//     window.addEventListener('resize', resizeStage)
+//   })
+// })
+
 onMounted(() => {
+  // Charger l'image de l'avatar
   const img = new window.Image()
   img.src = avatarSrc
   img.onload = () => { avatarImage.value = img }
 
-  const stage = Konva.stages?.[0]
-  if (stage) stage.setAttr('dragDistance', 0)
+  // Initialiser le store
+  store.loadInitialData()
 
-  // Créer une séance par défaut si aucune n'existe
-  if (store.state.sessions.length === 0) {
-    const defaultClass = Object.keys(store.state.classes)[0]
-    if (defaultClass) {
-      addPlot
-      store.createSession({
-        name: `Séance par défaut - ${defaultClass}`,
-        className: defaultClass,
-        selectedCompetenceIds: competenceData.map(c => c.id),
-        date: new Date().toISOString().split('T')[0],
-      })
-    }
+  // Sélectionner la dernière session si elle existe
+  if (store.state.sessions.length > 0) {
+    const lastSession = store.state.sessions[store.state.sessions.length - 1]
+    store.setCurrentSession(lastSession.id)
+  } else if (Object.keys(store.state.classes).length > 0) {
+    // Créer une session par défaut si aucune n'existe
+    const firstClass = Object.keys(store.state.classes)[0]
+    store.createSession({
+      name: `Séance initiale - ${firstClass}`,
+      className: firstClass,
+      selectedCompetenceIds: store.state.competences.map(c => c.id)
+    })
   }
 
+  // Configurer Konva
   nextTick(() => {
     resizeStage()
     window.addEventListener('resize', resizeStage)
   })
 })
+
 
 onBeforeUnmount(() => {
   window.removeEventListener('resize', resizeStage)

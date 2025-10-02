@@ -1,30 +1,13 @@
 // src/stores/evaluationStore.ts
 import { reactive, watch } from 'vue'
 import debounce from 'lodash.debounce'
-import type { Student, Plot, Competence } from '@/models'
+import type { AppState, Student, Competence, Session, Plot } from '@/models'
 import classesData from '@/models/classData'
 import competencesData from '@/models/competenceData'
 
 
-// 1. Définition des interfaces (compatible avec ton code)
-interface Session {
-  id: string
-  name: string
-  className: string
-  date: string
-  plotGroups: Plot[]
-  selectedCompetenceIds: number[]
-}
-
-interface AppState {
-  classes: Record<string, Student[]>
-  competences: Competence[]
-  sessions: Session[]
-  currentSessionId: string | null
-}
-
-// 2. État réactif
-const state = reactive<AppState>({
+// État réactif
+let state = reactive<AppState>({
   classes: {},
   competences: [],
   sessions: [],
@@ -33,30 +16,19 @@ const state = reactive<AppState>({
 
 // Charger les données initiales depuis les fichiers JSON
 function loadInitialData() {
-  // Charger les compétences
+  // Compétences
   state.competences = competencesData
 
-  // Charger les classes initiales
+  // Classes
   Object.entries(classesData).forEach(([className, students]) => {
     state.classes[className] = students.map((student: any, index: number) => ({
       ...student,
-      id: student.id || Date.now() + index, // S'assurer que chaque élève a un ID
-      plotId: null,
+      id: student.id || Date.now() + index,
       x: 0,
-      y: 0
+      y: 0,
+      plotId: null
     }))
   })
-
-  // Charger une séance par défaut si des classes existent
-  const firstClassName = Object.keys(state.classes)[0]
-  if (firstClassName) {
-    createSession({
-      name: `Séance initiale - ${firstClassName}`,
-      className: firstClassName,
-      selectedCompetenceIds: state.competences.map(c => c.id),
-      date: new Date().toISOString().split('T')[0] // Add the date property
-    })
-  }
 }
 
 // Charger l'état sauvegardé ou les données initiales
@@ -65,21 +37,29 @@ function loadState() {
   if (saved) {
     try {
       const parsed = JSON.parse(saved)
-      // Fusionner les données sauvegardées avec les données initiales
-      Object.assign(state, {
+      // Fusionner avec les données initiales
+      const newState = {
+        ...state,
         ...parsed,
-        // Garder les compétences initiales si aucune n'est sauvegardée
-        competences: parsed.competences?.length ? parsed.competences : state.competences,
-        // Fusionner les classes: garder les classes initiales + ajouter les nouvelles
-        classes: { ...state.classes, ...parsed.classes }
-      })
+        classes: { ...state.classes, ...parsed.classes },
+        competences: parsed.competences || state.competences
+      };
+      state = newState;
     } catch (e) {
-      console.error("Erreur de chargement de l'état sauvegardé", e)
-      loadInitialData() // Charger les données initiales en cas d'erreur
+      console.error("Erreur de chargement de l'état", e)
     }
   } else {
-    loadInitialData() // Charger les données initiales si rien n'est sauvegardé
+    loadInitialData()
   }
+}
+
+function saveState() {
+  localStorage.setItem('evaluationAppState', JSON.stringify({
+    classes: state.classes,
+    competences: state.competences,
+    sessions: state.sessions,
+    currentSessionId: state.currentSessionId
+  }))
 }
 
 // 4. Sauvegarde automatique
@@ -92,18 +72,42 @@ watch(
 )
 
 // 5. Méthodes pour les séances
-function createSession(session: Omit<Session, 'id' | 'plotGroups'>) {
+// function createSession(session: Omit<Session, 'id' | 'plotGroups'>) {
+//   const newSession: Session = {
+//     id: Date.now().toString(),
+//     ...session,
+//     date: new Date().toISOString().split('T')[0],
+//     plotGroups: [],
+//   }
+//   state.sessions.push(newSession)
+//   state.currentSessionId = newSession.id
+//   return newSession
+// }
+
+function createSession(sessionData: {
+  name: string
+  className: string
+  selectedCompetenceIds: number[]
+  date?: string
+}) {
   const newSession: Session = {
     id: Date.now().toString(),
-    ...session,
-    date: new Date().toISOString().split('T')[0],
+    name: sessionData.name,
+    className: sessionData.className,
+    date: sessionData.date || new Date().toISOString().split('T')[0],
     plotGroups: [],
+    selectedCompetenceIds: sessionData.selectedCompetenceIds
   }
+
   state.sessions.push(newSession)
   state.currentSessionId = newSession.id
   return newSession
 }
-
+function isValidSession(session: Session): boolean {
+  return !!session.name &&
+    !!session.className &&
+    state.classes[session.className] !== undefined
+}
 function getCurrentSession() {
   return state.sessions.find(s => s.id === state.currentSessionId)
 }
@@ -154,10 +158,12 @@ loadState()
 export function useEvaluationStore() {
   return {
     state,
+    loadInitialData,
     getCurrentSession,
     setCurrentSession,
     addPlotToSession,
     updatePlot,
     createSession,
+    isValidSession
   }
 }
