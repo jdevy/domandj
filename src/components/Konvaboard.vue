@@ -3,28 +3,29 @@
     <v-stage :config="stageSize">
       <v-layer>
         <!-- Plots -->
-        <v-group v-for="plot in currentSession?.plotGroups" :key="plot.id" :config="{
-          x: plot.x,
-          y: plot.y,
-          draggable: true,
-          dragBoundFunc: limitPlotToBounds
-        }" @dragmove="updatePlotPosition(plot, $event)" @dragend="updatePlotPosition(plot, $event)">
-
-          <!-- Affichage du plot -->
-          <v-rect :config="getPlotRectStyle(plot, highlightedPlotId === plot.id, plotBeingDeletedId === plot.id)" />
-
-          <!-- Nom du plot -->
+        <v-group
+          v-for="plot in currentSession?.plotGroups"
+          :key="plot.id"
+          :config="{
+            x: plot.x,
+            y: plot.y,
+            draggable: true,
+            dragBoundFunc: limitPlotToBounds
+          }"
+          @dragmove="updatePlotPosition(plot, $event)"
+          @dragend="updatePlotPosition(plot, $event)"
+        >
+          <v-rect
+            :config="getPlotRectStyle(plot, highlightedPlotId === plot.id, plotBeingDeletedId === plot.id)"
+          />
           <v-text :config="{ text: plot.name, ...getPlotTextStyle(plot) }" />
-
-          <!-- Indicateur visuel des évaluations -->
-          <!-- <v-group v-if="Object.keys(plot.evaluations || {}).length > 0">
-            <v-rect :config="getEvaluationIndicatorConfig(plot)" />
-          </v-group> -->
 
           <!-- Bouton Évaluation -->
           <template v-if="hasStudents(plot)">
-            <v-group :config="{ ...defaultGroupPosition(110, 100), listening: true }"
-              @pointerdown="handleEvaluationClick(plot, $event)">
+            <v-group
+              :config="{ ...defaultGroupPosition(110, 100), listening: true }"
+              @pointerdown="handleEvaluationClick(plot, $event)"
+            >
               <v-rect :config="{ x: 0, y: 0, width: 50, height: 50, fill: 'transparent' }" />
               <v-rect :config="evaluationButtonRect" />
               <v-text :config="evaluationButtonText" />
@@ -33,15 +34,18 @@
         </v-group>
 
         <!-- Élèves -->
-        <v-group v-for="(student, index) in currentStudents" :key="student.id" :config="{
-          ...getStudentPosition(student, index),
-          draggable: true,
-          dragBoundFunc: limitStudentToBounds
-        }" @dragmove="highlightPlotUnder(student, $event)" @dragend="updateStudentPosition(student, $event)">
-
+        <v-group
+          v-for="(student, index) in currentStudents"
+          :key="student.id"
+          :config="{
+            ...getStudentPosition(student, index),
+            draggable: true,
+            dragBoundFunc: limitStudentToBounds
+          }"
+          @dragmove="highlightPlotUnder(student, $event)"
+          @dragend="updateStudentPosition(student, $event)"
+        >
           <v-image v-if="avatarImage" :config="getStudentAvatarStyle(avatarImage)" />
-
-          <!-- Étiquette prénom -->
           <v-group>
             <v-rect :config="getStudentLabelRectStyle()" />
             <v-text :config="getStudentLabelTextStyle(student.name)" />
@@ -57,9 +61,14 @@ import { ref, computed } from 'vue'
 import { hasStudents } from '@/services/plotService'
 import type { Plot, Student, DragKonvaEvent, Position } from '@/models'
 import {
-  evaluationButtonRect, evaluationButtonText, defaultGroupPosition,
-  getPlotRectStyle, getPlotTextStyle, getStudentAvatarStyle,
-  getStudentLabelRectStyle, getStudentLabelTextStyle
+  evaluationButtonRect,
+  evaluationButtonText,
+  defaultGroupPosition,
+  getPlotRectStyle,
+  getPlotTextStyle,
+  getStudentAvatarStyle,
+  getStudentLabelRectStyle,
+  getStudentLabelTextStyle
 } from '@/styles/konvaStyles'
 import { useEvaluationStore } from '@/stores/evaluationStore'
 import { debounce } from 'lodash'
@@ -71,157 +80,28 @@ const props = defineProps({
 })
 
 // Événements
-const emit = defineEmits([
-  'delete-plot',
-  'open-evaluation'
-])
+const emit = defineEmits(['delete-plot', 'open-evaluation'])
 
-// État local
+// State local
 const highlightedPlotId = ref<number | null>(null)
 const plotBeingDeletedId = ref<number | null>(null)
 const store = useEvaluationStore()
 
-// Données calculées
+// Store helpers
 const currentSession = computed(() => store.getCurrentSession())
 const currentStudents = computed(() => {
   if (!currentSession.value) return []
   return store.state.classes[currentSession.value.className] || []
 })
 
-// Méthodes
+// --- Méthodes ---
 function handleEvaluationClick(plot: Plot, evt: any) {
   evt.cancelBubble = true
-  emit('open-evaluation', { ...plot }) // Créer une copie pour éviter les références
+  emit('open-evaluation', { ...plot })
 }
-
-function getPlotForStudent(student: Student): Plot | undefined {
-  return currentSession.value?.plotGroups.find(p => p.id === student.plotId)
-}
-
-function getStudentIndexInPlot(student: Student): number {
-  if (!student.plotId) return -1
-  return currentStudents.value
-    .filter(s => s.plotId === student.plotId)
-    .findIndex(s => s.id === student.id)
-}
-
-function getStudentPosition(student: Student, index: number): Position {
-  if (student.plotId) {
-    const plot = getPlotForStudent(student)
-    if (plot) {
-      const i = getStudentIndexInPlot(student)
-      return {
-        x: plot.x + 10,
-        y: plot.y + 40 + i * 40,
-      }
-    }
-  }
-
-  // Position par défaut (colonne de droite)
-  const margin = 20
-  const baseX = Math.max(props.stageSize.width - 100 - margin, margin)
-  return {
-    x: baseX,
-    y: 60 + index * 60,
-  }
-}
-
-function updatePlotPosition(plot: Plot, event: DragKonvaEvent) {
-  const pos = event.target.position()
-  plot.x = pos.x
-  plot.y = pos.y
-
-  // Gestion de la zone de suppression
-  const stage = event.target.getStage()
-  const pointer = stage?.getPointerPosition()
-  if (!pointer) return
-
-  const margin = 80
-  const thresholdX = props.stageSize.width - margin
-  const thresholdY = props.stageSize.height - margin
-  const isOverDeleteZone = pointer.x >= thresholdX && pointer.y >= thresholdY
-
-  if (isOverDeleteZone) {
-    plotBeingDeletedId.value = plot.id
-  } else if (plotBeingDeletedId.value === plot.id) {
-    plotBeingDeletedId.value = null
-  }
-
-  if (event.type === 'dragend') {
-    if (isOverDeleteZone) {
-      const plotHasStudents = currentStudents.value.some(s => s.plotId === plot.id)
-      if (!plotHasStudents) {
-        emit('delete-plot', plot.id)
-      } else {
-        alert("Ce plot contient des élèves. Vous devez les retirer avant de supprimer.")
-      }
-    }
-    plotBeingDeletedId.value = null
-  }
-}
-
-// Remplace ta fonction actuelle par celle-ci
-const updateStudentPosition = debounce((student: Student, event: DragKonvaEvent) => {
-  const group = event.target;
-  const pos = group.getAbsolutePosition();
-  if (!pos) return;
-
-  const session = store.getCurrentSession();
-  if (!session) return;
-
-  // Trouver le plot sous l'étudiant avec une marge de magnétisme
-  const MAGNET_MARGIN = 20;
-  const plot = getPlotUnderStudent(pos);
-
-  // Créer une copie de l'étudiant mis à jour
-  const updatedStudent: Student = {
-    ...student,
-    x: pos.x,
-    y: pos.y
-  };
-
-  // Trouver l'ancien plot si l'étudiant en avait un
-  const oldPlot = session.plotGroups.find(p => p.students.includes(student.id));
-
-  if (plot) {
-    // Nouvel emplacement: un plot
-    updatedStudent.plotId = plot.id;
-
-    // Ajouter à la liste des étudiants du nouveau plot
-    if (!plot.students.includes(student.id)) {
-      plot.students.push(student.id);
-    }
-
-    // Retirer de l'ancien plot si différent
-    if (oldPlot && oldPlot.id !== plot.id) {
-      oldPlot.students = oldPlot.students.filter(id => id !== student.id);
-    }
-  } else {
-    // Nouvel emplacement: hors des plots
-    updatedStudent.plotId = null;
-
-    // Retirer de tous les plots
-    session.plotGroups.forEach(p => {
-      p.students = p.students.filter(id => id !== student.id);
-    });
-  }
-
-  // Mettre à jour la position de l'étudiant dans le store
-  const className = session.className;
-  const classStudents = store.state.classes[className] || [];
-  const studentIndex = classStudents.findIndex(s => s.id === student.id);
-  if (studentIndex !== -1) {
-    store.state.classes[className][studentIndex] = updatedStudent;
-  }
-
-  highlightedPlotId.value = null;
-}, 16);
-
-
 
 function getPlotUnderStudent(pos: Position): Plot | null {
   if (!currentSession.value) return null
-
   const width = 40
   const height = 40
   const centerX = pos.x + width / 2
@@ -233,14 +113,73 @@ function getPlotUnderStudent(pos: Position): Plot | null {
   ) || null
 }
 
+function highlightPlotUnder(student: Student, event: DragKonvaEvent) {
+  const pos = event.target.getAbsolutePosition()
+  const plot = getPlotUnderStudent(pos)
+  highlightedPlotId.value = plot ? plot.id : null
+}
+
+// --- Gestion du drag des plots ---
+function updatePlotPosition(plot: Plot, event: DragKonvaEvent) {
+  const pos = event.target.position()
+  plot.x = pos.x
+  plot.y = pos.y
+
+  const stage = event.target.getStage()
+  const pointer = stage?.getPointerPosition()
+  if (!pointer) return
+
+  const margin = 80
+  const thresholdX = props.stageSize.width - margin
+  const thresholdY = props.stageSize.height - margin
+  const isOverDeleteZone = pointer.x >= thresholdX && pointer.y >= thresholdY
+
+  plotBeingDeletedId.value = isOverDeleteZone ? plot.id : (plotBeingDeletedId.value === plot.id ? null : plotBeingDeletedId.value)
+
+  if (event.type === 'dragend' && isOverDeleteZone) {
+    const plotHasStudents = currentStudents.value.some(s => s.plotId === plot.id)
+    if (!plotHasStudents) {
+      emit('delete-plot', plot.id)
+    } else {
+      alert("Ce plot contient des élèves. Vous devez les retirer avant de supprimer.")
+    }
+    plotBeingDeletedId.value = null
+  }
+}
+
+// --- Gestion du drag des élèves ---
+const updateStudentPosition = debounce((student: Student, event: DragKonvaEvent) => {
+  const pos = event.target.getAbsolutePosition()
+  if (!pos) return
+
+  const session = store.getCurrentSession()
+  if (!session) return
+
+  const plot = getPlotUnderStudent(pos)
+
+  if (plot) {
+    store.moveStudentToPlot(session.id, student.id, plot.id)
+  } else if (student.plotId) {
+    store.removeStudentFromPlot(session.id, student.id, student.plotId)
+  }
+
+  // Mise à jour des coordonnées x/y
+  const classStudents = store.state.classes[session.className]
+  const studentIndex = classStudents.findIndex(s => s.id === student.id)
+  if (studentIndex !== -1) {
+    classStudents[studentIndex] = { ...classStudents[studentIndex], x: pos.x, y: pos.y }
+  }
+
+  highlightedPlotId.value = null
+}, 16)
+
+// --- Limites pour les plots et élèves ---
 function limitPlotToBounds(pos: Position): Position {
   const plotWidth = 130
   const plotHeight = 130
-  const maxX = props.stageSize.width - plotWidth
-  const maxY = props.stageSize.height - plotHeight
   return {
-    x: Math.max(0, Math.min(pos.x, maxX)),
-    y: Math.max(0, Math.min(pos.y, maxY))
+    x: Math.max(0, Math.min(pos.x, props.stageSize.width - plotWidth)),
+    y: Math.max(0, Math.min(pos.y, props.stageSize.height - plotHeight))
   }
 }
 
@@ -248,28 +187,39 @@ function limitStudentToBounds(pos: Position): Position {
   const studentWidth = 70
   const studentHeight = 40
   const padding = 30
-  const maxX = props.stageSize.width - studentWidth - padding
-  const maxY = props.stageSize.height - studentHeight - padding
   return {
-    x: Math.max(padding, Math.min(pos.x, maxX)),
-    y: Math.max(padding, Math.min(pos.y, maxY))
+    x: Math.max(padding, Math.min(pos.x, props.stageSize.width - studentWidth - padding)),
+    y: Math.max(padding, Math.min(pos.y, props.stageSize.height - studentHeight - padding))
   }
 }
 
-function highlightPlotUnder(student: Student, event: DragKonvaEvent) {
-  const group = event.target
-  const pos = group.getAbsolutePosition()
-  if (!pos) return
-
-  const plot = getPlotUnderStudent(pos)
-  highlightedPlotId.value = plot ? plot.id : null
+// --- Calcul de position des élèves ---
+function getPlotForStudent(student: Student): Plot | undefined {
+  return currentSession.value?.plotGroups.find(p => p.id === student.plotId)
 }
 
-// Nouvelle fonction pour l'indicateur d'évaluation
+function getStudentIndexInPlot(student: Student): number {
+  if (!student.plotId) return -1
+  return currentStudents.value.filter(s => s.plotId === student.plotId).findIndex(s => s.id === student.id)
+}
+
+function getStudentPosition(student: Student, index: number): Position {
+  const plot = getPlotForStudent(student)
+  if (plot) {
+    const i = getStudentIndexInPlot(student)
+    return { x: plot.x + 10, y: plot.y + 40 + i * 40 }
+  }
+
+  const margin = 20
+  const baseX = Math.max(props.stageSize.width - 100 - margin, margin)
+  return { x: baseX, y: 60 + index * 60 }
+}
+
+// --- Indicateur d'évaluation ---
 function getEvaluationIndicatorConfig(plot: Plot) {
   const evaluations = plot.evaluations || {}
   const total = Object.keys(evaluations).length
-  if (total === 0) return { x: 0, y: 0, width: 0, height: 0 }
+  if (!total) return { x: 0, y: 0, width: 0, height: 0 }
 
   const trueCount = Object.values(evaluations).filter(v => v === true).length
   const ratio = trueCount / total

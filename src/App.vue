@@ -6,6 +6,7 @@
       <v-toolbar-title>Évaluation TP</v-toolbar-title>
 
       <v-spacer></v-spacer>
+      <v-btn icon="mdi-bug" @click="logStoreState(true)" title="Debug store" />
 
       <!-- Bouton Administration des classes -->
       <v-tooltip text="Gérer les classes" location="bottom">
@@ -101,6 +102,7 @@ import Evaluation from './components/Evaluation.vue'
 import ClasseManager from './components/ClasseManager.vue'
 import NewSessionModal from './components/NewSessionModal.vue'
 import CompetenceManager from '@/components/CompetenceManager.vue'
+import { logStoreState } from '@/utils/logStore'
 
 import type { Plot, Student } from '@/models'
 
@@ -178,46 +180,28 @@ function createNewSession(sessionData: {
 //   store.setCurrentSession(session.id)
 // }
 
-function addPlot(): void {
+function addPlot() {
   const session = store.getCurrentSession()
   if (!session) return
-
-  const newPlot: Plot = {
-    id: session.plotGroups.length > 0
-      ? Math.max(...session.plotGroups.map(p => p.id)) + 1
-      : 1,
-    name: `Plot ${session.plotGroups.length + 1}`,
-    x: 100 + session.plotGroups.length * 50,
-    y: 200,
-    students: [],
-    evaluations: {},
-  }
-  session.plotGroups.push(newPlot)
+  store.addPlot(session.id, {})
 }
+
 function selectSession(sessionId: string) {
   store.setCurrentSession(sessionId)
 }
-function deletePlot(plotId: number): void {
+function deletePlot(plotId: number) {
   const session = store.getCurrentSession()
   if (!session) return
-  session.plotGroups = session.plotGroups.filter(p => p.id !== plotId)
+  store.deletePlot(session.id, plotId)
 }
 
 function loadStudents() {
   const session = store.getCurrentSession()
-  if (!session) return
+  if (!session) throw new Error("Session introuvable")
 
-  const className = session.className
-  const classStudents = store.state.classes[className] || []
-  const baseX = stageSize.width - 130
-  const baseY = 50
-
-  store.state.classes[className] = classStudents.map((student, index) => ({
-    ...student,
-    x: baseX,
-    y: baseY + index * 40,
-    plotId: null
-  }))
+  if (session) {
+    store.loadStudentsForSession(session.id, stageSize.width, stageSize.height)
+  }
 }
 
 function openEvaluation(plot: Plot): void {
@@ -240,20 +224,11 @@ function openEvaluation(plot: Plot): void {
 
 function resetClassData() {
   const session = store.getCurrentSession()
-  if (!session) {
-    alert('Aucune séance active.')
-    return
-  }
-
-  if (!confirm(`Voulez-vous vraiment réinitialiser les données pour la séance "${session.name}" ?`)) {
-    return
-  }
-
-  session.plotGroups = []
-  loadStudents()
-  currentPlot.value = null
-  showEvalModal.value = false
-  triggerToast(`Séance "${session.name}" réinitialisée`)
+  if (!session) return
+  store.pauseAutoSave()
+  store.resetSessionPlots(session.id)
+  store.resetStudentPositions(session.className)
+  store.resumeAutoSave()
 }
 
 function triggerToast(message: string) {
@@ -270,34 +245,6 @@ function resizeStage() {
   stageSize.height = window.innerHeight - rect.top - padding
 }
 
-// Cycle de vie
-// onMounted(() => {
-//   const img = new window.Image()
-//   img.src = avatarSrc
-//   img.onload = () => { avatarImage.value = img }
-
-//   const stage = Konva.stages?.[0]
-//   if (stage) stage.setAttr('dragDistance', 0)
-
-//   // Créer une séance par défaut si aucune n'existe
-//   if (store.state.sessions.length === 0) {
-//     const defaultClass = Object.keys(store.state.classes)[0]
-//     if (defaultClass) {
-//       addPlot
-//       store.createSession({
-//         name: `Séance par défaut - ${defaultClass}`,
-//         className: defaultClass,
-//         selectedCompetenceIds: competenceData.map(c => c.id),
-//         date: new Date().toISOString().split('T')[0],
-//       })
-//     }
-//   }
-
-//   nextTick(() => {
-//     resizeStage()
-//     window.addEventListener('resize', resizeStage)
-//   })
-// })
 
 onMounted(() => {
   // Charger l'image de l'avatar

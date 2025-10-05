@@ -1,18 +1,18 @@
 {
   "Seconde 12": [
-    { "id": 1, "name": "Alice", "color": "#f8f" },
-    { "id": 2, "name": "Bob", "color": "#f88" },
-    { "id": 3, "name": "Arthur", "color": "#f88" },
-    { "id": 4, "name": "Léa", "color": "#f8f" },
-    { "id": 5, "name": "Théo", "color": "#f88" },
-    { "id": 6, "name": "Benoîthenry", "color": "#8f8" }
+    { "id": 1, "name": "Alice" },
+    { "id": 2, "name": "Bob" },
+    { "id": 3, "name": "Arthur" },
+    { "id": 4, "name": "Léa" },
+    { "id": 5, "name": "Théo" },
+    { "id": 6, "name": "Benoîthenry" }
   ],
   "Première S1": [
-    { "id": 1, "name": "Claire", "color": "#88f" },
-    { "id": 2, "name": "David", "color": "#ff8" }
+    { "id": 1, "name": "Claire" },
+    { "id": 2, "name": "David" }
   ],
   "Première S2": [
-    { "id": 1, "name": "Eva", "color": "#f8f" },
-    { "id": 2, "name": "Farid", "color": "#8ff" }
+    { "id": 1, "name": "Eva" },
+    { "id": 2, "name": "Farid" }
   ]
 }

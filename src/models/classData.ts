@@ -1,4 +1,4 @@
-import type { Student } from './student'
+import type { Student } from '@/models'
 
 // Si tu utilises un fichier JSON
 import data from '../data/classes.json'

@@ -17,14 +17,8 @@
               <v-list density="compact">
                 <!-- Élèves existants -->
                 <v-list-item v-for="(student, i) in students" :key="student.id">
-                  <v-text-field
-                    v-model="student.name"
-                    placeholder="Nom de l'élève"
-                    variant="outlined"
-                    hide-details
-                    class="student-field"
-                    @blur="saveStudent(className, i)"
-                  >
+                  <v-text-field v-model="student.name" placeholder="Nom de l'élève" variant="outlined" hide-details
+                    class="student-field" @blur="saveStudent(className, i)">
                     <template #append>
                       <div class="student-action" @click="deleteStudent(className, i)">
                         <v-icon size="20" color="error">mdi-close</v-icon>
@@ -34,14 +28,8 @@
                 </v-list-item>
                 <!-- Nouvel élève -->
                 <v-list-item class="new-student-item">
-                  <v-text-field
-                    v-model="newStudent[className]"
-                    placeholder="Nouvel élève"
-                    variant="outlined"
-                    hide-details
-                    class="student-field"
-                    @keyup.enter="addStudentFromField(className)"
-                  >
+                  <v-text-field v-model="newStudent[className]" placeholder="Nouvel élève" variant="outlined"
+                    hide-details class="student-field" @keyup.enter="addStudentFromField(className)">
                     <template #append>
                       <div class="student-action" @click="addStudentFromField(className)">
                         <v-icon size="24" color="success">mdi-plus-thick</v-icon>
@@ -56,14 +44,8 @@
         <v-divider class="my-4" />
         <!-- Ajouter une nouvelle classe -->
         <v-list-item class="new-student-item">
-          <v-text-field
-            v-model="newClassName"
-            placeholder="Nouvelle classe"
-            variant="outlined"
-            hide-details
-            class="student-field"
-            @keyup.enter="addClass"
-          >
+          <v-text-field v-model="newClassName" placeholder="Nouvelle classe" variant="outlined" hide-details
+            class="student-field" @keyup.enter="addClass">
             <template #append>
               <div class="student-action" @click="addClass">
                 <v-icon size="34" color="green-darken-2" class="add-icon">mdi-plus</v-icon>
@@ -137,22 +119,6 @@ function deleteClass(name: string) {
       store.state.currentSessionId = store.state.sessions[0]?.id || null
     }
   }
-}
-
-function saveStudent(className: string, index: number) {
-  // Le store est réactif, donc la modification est automatiquement sauvegardée
-  // Pas besoin de faire quoi que ce soit de plus
-}
-
-function addStudent(className: string) {
-  const newStudentId = Date.now()
-  store.state.classes[className].push({
-    id: newStudentId,
-    name: "",
-    x: 0,
-    y: 0,
-    plotId: null
-  })
 }
 
 function deleteStudent(className: string, index: number) {
