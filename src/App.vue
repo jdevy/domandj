@@ -253,7 +253,9 @@ onMounted(() => {
   img.onload = () => { avatarImage.value = img }
 
   // Initialiser le store
-  store.loadInitialData()
+  if (Object.keys(store.state.classes).length === 0) {
+    store.loadInitialData()
+  } 
 
   // Sélectionner la dernière session si elle existe
   if (store.state.sessions.length > 0) {

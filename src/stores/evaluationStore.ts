@@ -44,7 +44,6 @@ function loadState() {
   if (saved) {
     try {
       const parsed = JSON.parse(saved)
-      console.log('📦 Données chargées:', parsed.classes)
 
       // Solution corrigée: fusion profonde des classes
       if (parsed.classes) {
@@ -64,9 +63,7 @@ function loadState() {
           savedStudents.forEach(savedStudent => {
             if (!existingStudentIds.has(savedStudent.id)) {
               state.classes[className].push(savedStudent)
-              console.log('Classes apres ajout:', state.classes[className].forEach(c => console.log(c)))
             }
-      console.log('📥 État après chargement:', state.classes)
           })
         })
       }
@@ -79,9 +76,6 @@ function loadState() {
       // Réconcilier les données
       reconcilePlotsAndStudents()
       reassignStudentPositions()
-
-//      console.log('📥 État après chargement:', state.classes)
-
     } catch (e) {
       console.error("Erreur de chargement de l'état", e)
       loadInitialData()
