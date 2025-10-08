@@ -3,29 +3,19 @@
     <v-stage :config="stageSize">
       <v-layer>
         <!-- Plots -->
-        <v-group
-          v-for="plot in currentSession?.plotGroups"
-          :key="plot.id"
-          :config="{
-            x: plot.x,
-            y: plot.y,
-            draggable: true,
-            dragBoundFunc: limitPlotToBounds
-          }"
-          @dragmove="updatePlotPosition(plot, $event)"
-          @dragend="updatePlotPosition(plot, $event)"
-        >
-          <v-rect
-            :config="getPlotRectStyle(plot, highlightedPlotId === plot.id, plotBeingDeletedId === plot.id)"
-          />
+        <v-group v-for="plot in currentSession?.plotGroups" :key="plot.id" :config="{
+          x: plot.x,
+          y: plot.y,
+          draggable: true,
+          dragBoundFunc: limitPlotToBounds
+        }" @dragmove="updatePlotPosition(plot, $event)" @dragend="updatePlotPosition(plot, $event)">
+          <v-rect :config="getPlotRectStyle(plot, highlightedPlotId === plot.id, plotBeingDeletedId === plot.id)" />
           <v-text :config="{ text: plot.name, ...getPlotTextStyle(plot) }" />
 
           <!-- Bouton Évaluation -->
           <template v-if="hasStudents(plot)">
-            <v-group
-              :config="{ ...defaultGroupPosition(110, 100), listening: true }"
-              @pointerdown="handleEvaluationClick(plot, $event)"
-            >
+            <v-group :config="{ ...defaultGroupPosition(110, 100), listening: true }"
+              @pointerdown="handleEvaluationClick(plot, $event)">
               <v-rect :config="{ x: 0, y: 0, width: 50, height: 50, fill: 'transparent' }" />
               <v-rect :config="evaluationButtonRect" />
               <v-text :config="evaluationButtonText" />
@@ -34,17 +24,11 @@
         </v-group>
 
         <!-- Élèves -->
-        <v-group
-          v-for="(student, index) in currentStudents"
-          :key="student.id"
-          :config="{
-            ...getStudentPosition(student, index),
-            draggable: true,
-            dragBoundFunc: limitStudentToBounds
-          }"
-          @dragmove="highlightPlotUnder(student, $event)"
-          @dragend="updateStudentPosition(student, $event)"
-        >
+        <v-group v-for="(student, index) in currentStudents" :key="student.id" :config="{
+          ...getStudentPosition(student, index),
+          draggable: true,
+          dragBoundFunc: limitStudentToBounds
+        }" @dragmove="highlightPlotUnder(student, $event)" @dragend="updateStudentPosition(student, $event)">
           <v-image v-if="avatarImage" :config="getStudentAvatarStyle(avatarImage)" />
           <v-group>
             <v-rect :config="getStudentLabelRectStyle()" />
@@ -210,9 +194,14 @@ function getStudentPosition(student: Student, index: number): Position {
     return { x: plot.x + 10, y: plot.y + 40 + i * 40 }
   }
 
+  // Sinon : élève non assigné -> positionner selon l'ordre des non-assignés
+  const unassigned = currentStudents.value.filter(s => !s.plotId)
+  const i = unassigned.findIndex(s => s.id === student.id)
+  const posIndex = i >= 0 ? i : index
+
   const margin = 20
   const baseX = Math.max(props.stageSize.width - 100 - margin, margin)
-  return { x: baseX, y: 60 + index * 60 }
+  return { x: baseX, y: 60 + posIndex * 60 }
 }
 
 // --- Indicateur d'évaluation ---

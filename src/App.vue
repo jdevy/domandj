@@ -252,8 +252,8 @@ onMounted(() => {
   img.src = avatarSrc
   img.onload = () => { avatarImage.value = img }
 
-  // Initialiser le store
-  if (Object.keys(store.state.classes).length === 0) {
+  // Charger les données initiales UNIQUEMENT si rien n'est sauvegardé
+  if (!localStorage.getItem('evaluationAppState')) {
     store.loadInitialData()
   } 
 
