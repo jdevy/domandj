@@ -54,12 +54,42 @@
         <h2 class="session-title">
           {{ currentSession.name }} - ({{ currentSession.className }})
         </h2>
-        <v-tooltip text="Réinitialiser la classe" location="bottom">
+
+
+        <v-menu location="bottom-end">
           <template v-slot:activator="{ props }">
-            <v-btn v-bind="props" icon="mdi-refresh" variant="text" color="grey-darken-1" class="reset-button"
-              @click="resetClassData" />
+            <v-btn v-bind="props" icon variant="text" color="grey-darken-1" class="reset-button">
+              <v-icon>mdi-dots-vertical</v-icon>
+            </v-btn>
           </template>
-        </v-tooltip>
+
+          <v-list density="compact">
+            <v-list-item @click="resetClassData">
+              <v-list-item-title>
+                <v-icon color="red">mdi-refresh</v-icon>
+                <span>&nbsp;&nbsp;Réinitialiser la classe</span>
+              </v-list-item-title>
+            </v-list-item>
+
+            <v-list-item @click="showSessionEditModal = true">
+              <v-list-item-title>
+                <v-icon>mdi-pencil</v-icon>
+                <span>&nbsp;&nbsp;Modifier la session</span>
+              </v-list-item-title>
+            </v-list-item>
+            <v-divider class="my-1"></v-divider>
+
+            <v-list-item @click="logStoreState(true)">
+              <v-list-item-title>
+                <v-icon>mdi-bug</v-icon>
+                <span>&nbsp;&nbsp;Logs techniques</span>
+              </v-list-item-title>
+            </v-list-item>
+          </v-list>
+        </v-menu>
+
+
+
       </div>
 
       <Konvaboard :plots="plots" :students="students" :avatar-image="avatarImage" :stage-size="stageSize"
@@ -108,6 +138,7 @@ import type { Plot, Student } from '@/models'
 
 const version = import.meta.env.PACKAGE_VERSION
 const store = useEvaluationStore()
+const showSessionEditModal = ref(false)
 
 // Données réactives
 const stageSize = reactive({ width: window.innerWidth, height: window.innerHeight })
@@ -225,6 +256,8 @@ function openEvaluation(plot: Plot): void {
 function resetClassData() {
   const session = store.getCurrentSession()
   if (!session) return
+  if (!confirm(`Êtes-vous sûr de vouloir réinitialiser la classe "${session.className}" ?`)) return
+
   store.pauseAutoSave()
   store.resetSessionPlots(session.id)
   store.resetStudentPositions(session.className)
@@ -255,7 +288,7 @@ onMounted(() => {
   // Charger les données initiales UNIQUEMENT si rien n'est sauvegardé
   if (!localStorage.getItem('evaluationAppState')) {
     store.loadInitialData()
-  } 
+  }
 
   // Sélectionner la dernière session si elle existe
   if (store.state.sessions.length > 0) {
