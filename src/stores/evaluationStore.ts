@@ -14,7 +14,6 @@ let state = reactive<AppState>({
   sessions: [],
   currentSessionId: null,
 })
-
 let autoSaveEnabled = true // contrôle de l’autosave
 
 // ==================================================
@@ -23,7 +22,6 @@ let autoSaveEnabled = true // contrôle de l’autosave
 function loadInitialData() {
   // Charger les compétences
   state.competences = competencesData
-
   // Charger les classes
   Object.entries(classesData).forEach(([className, students]) => {
     state.classes[className] = students.map((student: any, index: number) => ({
@@ -31,7 +29,6 @@ function loadInitialData() {
       id: student.id || Date.now() + index,
       x: 0,
       y: 0,
-      plotId: null,
     }))
   })
 }
@@ -44,35 +41,29 @@ function loadState() {
   if (saved) {
     try {
       const parsed = JSON.parse(saved)
-
       // Solution corrigée: fusion profonde des classes
       if (parsed.classes) {
-        // Pour chaque classe dans les données sauvegardées
         Object.entries(parsed.classes).forEach(([className, students]) => {
-          // Si la classe n'existe pas encore, la créer
           if (!state.classes[className]) {
             state.classes[className] = []
           }
-
-          // Fusionner les étudiants existants avec les nouveaux
           const existingStudents = state.classes[className]
           const existingStudentIds = new Set(existingStudents.map(s => s.id))
           const savedStudents = students as Student[]
-
-          // Ajouter seulement les étudiants qui n'existent pas déjà
           savedStudents.forEach(savedStudent => {
             if (!existingStudentIds.has(savedStudent.id)) {
-              state.classes[className].push(savedStudent)
+              state.classes[className].push({
+                ...savedStudent
+   //             plotId: undefined, // Suppression de plotId
+              })
             }
           })
         })
       }
-
       // Charger les autres données normalement
       state.competences = parsed.competences || state.competences
       state.sessions = parsed.sessions || state.sessions
       state.currentSessionId = parsed.currentSessionId || state.currentSessionId
-
       // Réconcilier les données
       reconcilePlotsAndStudents()
       reassignStudentPositions()
@@ -84,8 +75,6 @@ function loadState() {
     loadInitialData()
   }
 }
-
-
 
 // Sauvegarde
 function saveState() {
@@ -103,7 +92,6 @@ function saveState() {
 
 // Autosave automatique (debounced)
 const debouncedSave = debounce(saveState, 1000)
-
 watch(
   state,
   () => {
@@ -132,27 +120,11 @@ function resumeAutoSave() {
 function reconcilePlotsAndStudents() {
   state.sessions.forEach((session) => {
     const classStudents = state.classes[session.className] || []
-
-    // Nettoyer tous les students.plotId obsolètes
-    classStudents.forEach((student) => {
-      if (
-        student.plotId &&
-        !session.plotGroups.some((plot) => plot.id === student.plotId)
-      ) {
-        student.plotId = null
-      }
-    })
-
-    // Nettoyer plot.students invalides et remettre les élèves dans le plot
+    // Nettoyer plot.students invalides
     session.plotGroups.forEach((plot) => {
       plot.students = plot.students.filter((studentId) =>
         classStudents.some((s) => s.id === studentId)
       )
-
-      plot.students.forEach((studentId) => {
-        const student = classStudents.find((s) => s.id === studentId)
-        if (student) student.plotId = plot.id
-      })
     })
   })
 }
@@ -161,7 +133,6 @@ function reconcilePlotsAndStudents() {
 function reassignStudentPositions() {
   state.sessions.forEach((session) => {
     const classStudents = state.classes[session.className] || []
-
     session.plotGroups.forEach((plot) => {
       plot.students.forEach((studentId, idx) => {
         const student = classStudents.find((s) => s.id === studentId)
@@ -191,7 +162,6 @@ function createSession(sessionData: {
     plotGroups: [],
     selectedCompetenceIds: sessionData.selectedCompetenceIds,
   }
-
   state.sessions.push(newSession)
   state.currentSessionId = newSession.id
   return newSession
@@ -217,7 +187,6 @@ function resetSessionPlots(sessionId: string) {
 function addPlot(sessionId: string, partialPlot: Partial<Plot>) {
   const session = state.sessions.find((s) => s.id === sessionId)
   if (!session) throw new Error('Session introuvable')
-
   const newPlot: Plot = {
     id:
       session.plotGroups.length > 0
@@ -229,7 +198,6 @@ function addPlot(sessionId: string, partialPlot: Partial<Plot>) {
     students: partialPlot.students || [],
     evaluations: {},
   }
-
   session.plotGroups.push(newPlot)
   return newPlot
 }
@@ -249,25 +217,20 @@ function resetStudentPositions(className: string) {
     ...student,
     x: 800,
     y: 50 + index * 40,
-    plotId: null,
   }))
 }
 
 function loadStudentsForSession(sessionId: string, stageWidth: number, stageHeight: number) {
   const session = state.sessions.find((s) => s.id === sessionId)
   if (!session) throw new Error('Session introuvable')
-
   const className = session.className
   const classStudents = state.classes[className] || []
-
   const baseX = stageWidth - 130
   const baseY = 50
-
   state.classes[className] = classStudents.map((student, index) => ({
     ...student,
     x: baseX,
     y: baseY + index * 40,
-    plotId: student.plotId, // conserver le plotId existant
   }))
 }
 
@@ -277,42 +240,37 @@ function loadStudentsForSession(sessionId: string, stageWidth: number, stageHeig
 function assignStudentToPlot(sessionId: string, studentId: number, plotId: number) {
   const session = state.sessions.find((s) => s.id === sessionId)
   if (!session) throw new Error('Session introuvable')
-
-  const className = session.className
-  const classStudents = state.classes[className]
-  const student = classStudents.find((s) => s.id === studentId)
   const plot = session.plotGroups.find((p) => p.id === plotId)
-  if (!student || !plot) return
+  if (!plot) return
 
-  // Retirer du plot précédent si nécessaire
-  if (student.plotId && student.plotId !== plotId) {
-    removeStudentFromPlot(sessionId, studentId, student.plotId)
-  }
+  // Retirer de tous les plots de la session
+  session.plotGroups.forEach(p => {
+    p.students = p.students.filter(id => id !== studentId)
+  })
 
   // Ajouter au plot
   if (!plot.students.includes(studentId)) plot.students.push(studentId)
-  student.plotId = plotId
 }
 
 function removeStudentFromPlot(sessionId: string, studentId: number, plotId: number) {
   const session = state.sessions.find((s) => s.id === sessionId)
   if (!session) throw new Error('Session introuvable')
-
-  const className = session.className
-  const classStudents = state.classes[className]
-  const student = classStudents.find((s) => s.id === studentId)
-  const plot = session.plotGroups.find((p) => p.id === plotId)
-  if (!student || !plot) return
-
-  plot.students = plot.students.filter((id) => id !== studentId)
-  student.plotId = null
+  const plot = session.plotGroups.find(p => p.id === plotId)
+  if (plot) {
+    plot.students = plot.students.filter(id => id !== studentId)
+  }
 }
 
 function moveStudentToPlot(sessionId: string, studentId: number, newPlotId: number) {
   const session = state.sessions.find((s) => s.id === sessionId)
   if (!session) throw new Error('Session introuvable')
-  const oldPlotId = state.classes[session.className].find((s) => s.id === studentId)?.plotId
-  if (oldPlotId) removeStudentFromPlot(sessionId, studentId, oldPlotId)
+
+  // Retirer de tous les plots de la session
+  session.plotGroups.forEach(p => {
+    p.students = p.students.filter(id => id !== studentId)
+  })
+
+  // Ajouter au nouveau plot
   assignStudentToPlot(sessionId, studentId, newPlotId)
 }
 
@@ -320,7 +278,6 @@ function moveStudentToPlot(sessionId: string, studentId: number, newPlotId: numb
 // EXPORT
 // ==================================================
 loadState()
-
 export function useEvaluationStore() {
   return {
     state,

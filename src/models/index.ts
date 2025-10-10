@@ -5,7 +5,7 @@ export interface Student {
   name: string
   x: number
   y: number
-  plotId: number | null
+//  plotId: number | null
 }
 
 export interface Competence {

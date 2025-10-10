@@ -1,27 +1,21 @@
 <template>
   <div id="app">
-
     <!-- Barre d'outils avec les boutons -->
     <v-toolbar density="compact" class="mb-4">
       <v-toolbar-title>Évaluation TP</v-toolbar-title>
-
       <v-spacer></v-spacer>
-      <v-btn icon="mdi-bug" @click="logStoreState(true)" title="Debug store" />
-
       <!-- Bouton Administration des classes -->
       <v-tooltip text="Gérer les classes" location="bottom">
         <template v-slot:activator="{ props }">
           <v-btn v-bind="props" icon="mdi-account-group" variant="text" @click="showClasseModal = true" />
         </template>
       </v-tooltip>
-
       <!-- Bouton Administration des compétences -->
       <v-tooltip text="Gérer les compétences" location="bottom">
         <template v-slot:activator="{ props }">
           <v-btn v-bind="props" icon="mdi-star-circle" variant="text" @click="showCompetenceModal = true" />
         </template>
       </v-tooltip>
-
       <!-- Bouton Nouvelle session -->
       <v-tooltip text="Nouvelle session" location="bottom">
         <template v-slot:activator="{ props }">
@@ -29,7 +23,6 @@
             :disabled="!hasClasses" />
         </template>
       </v-tooltip>
-
       <!-- Sélecteur de session (si plusieurs sessions existent) -->
       <v-menu v-if="hasMultipleSessions" location="bottom">
         <template v-slot:activator="{ props }">
@@ -47,30 +40,25 @@
       </v-menu>
     </v-toolbar>
     <div class="version-indicator">v {{ version }}</div>
-
     <div class="stage-container stage-position" ref="stageContainer">
       <!-- Conteneur pour affichage du titre de la session courante -->
       <div v-if="currentSession" class="session-header">
         <h2 class="session-title">
           {{ currentSession.name }} - ({{ currentSession.className }})
         </h2>
-
-
         <v-menu location="bottom-end">
           <template v-slot:activator="{ props }">
             <v-btn v-bind="props" icon variant="text" color="grey-darken-1" class="reset-button">
               <v-icon>mdi-dots-vertical</v-icon>
             </v-btn>
           </template>
-
           <v-list density="compact">
             <v-list-item @click="resetClassData">
               <v-list-item-title>
                 <v-icon color="red">mdi-refresh</v-icon>
-                <span>&nbsp;&nbsp;Réinitialiser la classe</span>
+                <span>&nbsp;&nbsp;Réinitialiser la session</span>
               </v-list-item-title>
             </v-list-item>
-
             <v-list-item @click="showSessionEditModal = true">
               <v-list-item-title>
                 <v-icon>mdi-pencil</v-icon>
@@ -78,22 +66,25 @@
               </v-list-item-title>
             </v-list-item>
             <v-divider class="my-1"></v-divider>
-
             <v-list-item @click="logStoreState(true)">
               <v-list-item-title>
-                <v-icon>mdi-bug</v-icon>
+                <v-icon color="blue-grey-darken-2">mdi-bug</v-icon>
                 <span>&nbsp;&nbsp;Logs techniques</span>
               </v-list-item-title>
             </v-list-item>
+            <v-list-item @click="showLogsModal = true">
+              <v-icon color="blue-grey-darken-2">mdi-file-code</v-icon>
+              <span>&nbsp;&nbsp;Logs store</span>
+            </v-list-item>
           </v-list>
         </v-menu>
-
-
-
       </div>
-
-      <Konvaboard :plots="plots" :students="students" :avatar-image="avatarImage" :stage-size="stageSize"
-        @delete-plot="deletePlot" @open-evaluation="openEvaluation" />
+      <Konvaboard
+        :stage-size="stageSize"
+        :avatar-image="avatarImage"
+        @delete-plot="deletePlot"
+        @open-evaluation="openEvaluation"
+      />
       <button class="round-icon-btn plus-btn bottom-left" @click="addPlot">
         <LucidePlus size="24" />
       </button>
@@ -101,23 +92,44 @@
         <LucideTrash size="24" />
       </div>
     </div>
-
-    <Evaluation v-if="showEvalModal && currentPlot" v-model:plot-value="currentPlot" :visible="showEvalModal"
-      @close="showEvalModal = false" />
-
+    <Evaluation
+      v-if="showEvalModal && currentPlot"
+      v-model:plot-value="currentPlot"
+      :visible="showEvalModal"
+      @close="showEvalModal = false"
+    />
     <div v-if="showToast" class="toast-message">
       {{ toastMessage }}
     </div>
-
     <ClasseManager v-model:visible="showClasseModal" />
-
-    <NewSessionModal v-model:visible="showNewSessionModal" :classes="Object.keys(store.state.classes)"
-      :competences="store.state.competences" @create="createNewSession" />
-
+    <NewSessionModal
+      v-model:visible="showNewSessionModal"
+      :classes="Object.keys(store.state.classes)"
+      :competences="store.state.competences"
+      @create="createNewSession"
+    />
     <CompetenceManager v-model:visible="showCompetenceModal" />
-
-
-    <!-- <div class="version-indicator">v{{ version }}</div> -->
+    <v-dialog v-model="showLogsModal" max-width="800px">
+      <v-card>
+        <v-card-title class="text-h6">
+          État complet du store
+          <v-spacer></v-spacer>
+          <v-btn icon="mdi-close" variant="text" @click="showLogsModal = false" />
+        </v-card-title>
+        <v-card-actions class="justify-space-between">
+          <v-btn text color="primary" @click="copyStoreToClipboard">Copier</v-btn>
+          <v-btn text color="primary" @click="showLogsModal = false">Fermer</v-btn>
+        </v-card-actions>
+        <v-card-text>
+          <pre class="store-json">
+            {{ formattedStoreState }}
+          </pre>
+        </v-card-text>
+        <v-card-actions class="justify-end">
+          <v-btn text color="primary" @click="showLogsModal = false">Fermer</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </div>
 </template>
 
@@ -133,7 +145,6 @@ import ClasseManager from './components/ClasseManager.vue'
 import NewSessionModal from './components/NewSessionModal.vue'
 import CompetenceManager from '@/components/CompetenceManager.vue'
 import { logStoreState } from '@/utils/logStore'
-
 import type { Plot, Student } from '@/models'
 
 const version = import.meta.env.PACKAGE_VERSION
@@ -151,6 +162,7 @@ const currentPlot = ref<Plot | null>(null)
 const showToast = ref(false)
 const toastMessage = ref('')
 const showNewSessionModal = ref(false)
+const showLogsModal = ref(false)
 
 // Données calculées
 const currentSession = computed(() => store.getCurrentSession())
@@ -160,18 +172,22 @@ const students = computed(() => {
     ? store.state.classes[currentSession.value.className] || []
     : []
 })
-
 const filteredCompetences = computed(() => {
   return currentSession.value
-    ? competenceData.filter(comp =>
+    ? store.state.competences.filter(comp =>
       currentSession.value?.selectedCompetenceIds.includes(comp.id)
     )
-    : competenceData
+    : store.state.competences
 })
 const hasMultipleSessions = computed(() => store.state.sessions.length > 1)
 const hasClasses = computed(() => Object.keys(store.state.classes).length > 0)
-
-
+const formattedStoreState = computed(() => {
+  try {
+    return JSON.stringify(store.state, null, 2)
+  } catch (e) {
+    return "Erreur lors de la sérialisation du store"
+  }
+})
 
 // Méthodes
 function createNewSession(sessionData: {
@@ -186,30 +202,11 @@ function createNewSession(sessionData: {
     selectedCompetenceIds: sessionData.competenceIds,
     date: new Date().toISOString().split('T')[0],
   })
-
-  // Positionner les élèves (appel à loadStudents)
+  // Positionner les élèves
   loadStudents()
-
   // Fermer la modale
   showNewSessionModal.value = false
 }
-
-
-// function selectClass(className: string) {
-//   // Trouver ou créer une séance pour cette classe
-//   let session = store.state.sessions.find(s => s.className === className)
-
-//   if (!session) {
-//     session = store.createSession({
-//       name: `Séance pour ${className}`,
-//       className: className,
-//       selectedCompetenceIds: competenceData.map(c => c.id),
-//       date: new Date().toISOString().split('T')[0],
-//     })
-//   }
-
-//   store.setCurrentSession(session.id)
-// }
 
 function addPlot() {
   const session = store.getCurrentSession()
@@ -220,6 +217,7 @@ function addPlot() {
 function selectSession(sessionId: string) {
   store.setCurrentSession(sessionId)
 }
+
 function deletePlot(plotId: number) {
   const session = store.getCurrentSession()
   if (!session) return
@@ -229,35 +227,21 @@ function deletePlot(plotId: number) {
 function loadStudents() {
   const session = store.getCurrentSession()
   if (!session) throw new Error("Session introuvable")
-
-  if (session) {
-    store.loadStudentsForSession(session.id, stageSize.width, stageSize.height)
-  }
+  store.loadStudentsForSession(session.id, stageSize.width, stageSize.height)
 }
 
 function openEvaluation(plot: Plot): void {
   showEvalModal.value = false
-  const currentStudentIds = students.value
-    .filter(s => s.plotId === plot.id)  // Filtrer les élèves dont plotId correspond
-    .map(s => s.id)                      // Extraire les IDs
-
-  // // Create an array of Student objects based on the currentStudentIds
-  // const currentStudents: Student[] = students.value.filter((s: Student) => currentStudentIds.includes(s.id));
-
-  plot.students = currentStudentIds;
-
   nextTick(() => {
     currentPlot.value = plot
     showEvalModal.value = true
   })
 }
 
-
 function resetClassData() {
   const session = store.getCurrentSession()
   if (!session) return
   if (!confirm(`Êtes-vous sûr de vouloir réinitialiser la classe "${session.className}" ?`)) return
-
   store.pauseAutoSave()
   store.resetSessionPlots(session.id)
   store.resetStudentPositions(session.className)
@@ -277,7 +261,6 @@ function resizeStage() {
   stageSize.width = rect.width
   stageSize.height = window.innerHeight - rect.top - padding
 }
-
 
 onMounted(() => {
   // Charger l'image de l'avatar
@@ -311,10 +294,19 @@ onMounted(() => {
   })
 })
 
-
 onBeforeUnmount(() => {
   window.removeEventListener('resize', resizeStage)
 })
+
+function copyStoreToClipboard() {
+  if (typeof navigator !== 'undefined' && navigator.clipboard) {
+    navigator.clipboard.writeText(formattedStoreState.value)
+      .then(() => console.log('Store copié dans le presse-papier'))
+      .catch(err => console.error('Erreur lors de la copie :', err))
+  } else {
+    console.warn('Clipboard API non disponible')
+  }
+}
 </script>
 
 <style scoped>
@@ -323,10 +315,19 @@ onBeforeUnmount(() => {
   justify-content: space-between;
   align-items: center;
   padding: 0 16px;
-  /* margin-bottom: 8px; */
 }
-
 .reset-button {
   margin-left: auto;
+}
+.store-json {
+  max-height: 70vh;
+  overflow-y: auto;
+  background: #1e1e1e;
+  color: #c6e2ff;
+  padding: 16px;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  line-height: 1.2;
+  white-space: pre-wrap;
 }
 </style>
