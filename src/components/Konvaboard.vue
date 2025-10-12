@@ -161,13 +161,6 @@ const updateStudentPosition = debounce((student: Student, event: DragKonvaEvent)
       }
     })
   }
-
-  // Mise à jour des coordonnées x/y
-  const classStudents = store.state.classes[session.className]
-  const studentIndex = classStudents.findIndex(s => s.id === student.id)
-  if (studentIndex !== -1) {
-    classStudents[studentIndex] = { ...classStudents[studentIndex], x: pos.x, y: pos.y }
-  }
   highlightedPlotId.value = null
 }, 16)
 

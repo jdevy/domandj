@@ -1,10 +1,12 @@
 <template>
-    <v-dialog v-model="internalVisible" max-width="700px" persistent>
+    <v-dialog v-model="internalVisible" max-width="700px">
         <v-card>
-            <v-card-title class="text-h6 bg-primary text-white">
-                Gestion des compétences
-            </v-card-title>
+            <v-card-title class="text-h6 bg-primary text-white d-flex align-center justify-space-between">
+                <span>Gestion des compétences</span>
 
+                <v-btn icon="mdi-close" variant="tonal" color="white" size="small" class="close-btn"
+                    @click="internalVisible = false" />
+            </v-card-title>
             <v-card-text class="bg-grey-lighten-4">
                 <!-- Liste des compétences existantes -->
                 <v-expansion-panels>
@@ -16,7 +18,7 @@
                         </v-expansion-panel-title>
                         <v-expansion-panel-text>
                             <v-text-field v-model="comp.libelle_long" label="Nom complet" variant="outlined"
-                                hide-details class="mb-2" @blur="saveCompetence(index)" />
+                                hide-details class="mb-2" />
 
                             <v-text-field v-model="comp.libelle_court" label="Nom court" variant="outlined" hide-details
                                 class="mb-2" />
@@ -59,7 +61,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue'
+import { ref, computed } from 'vue'
 import { useEvaluationStore } from '@/stores/evaluationStore'
 import type { Competence } from '@/models'
 
@@ -81,8 +83,7 @@ const internalVisible = computed({
 const newCompetence = ref<Omit<Competence, 'id'>>({
     libelle_long: '',
     libelle_court: '',
-    coeff: 1,
-    statut: null
+    coeff: 1
 })
 
 // Fonction pour ajouter une compétence depuis les champs
@@ -106,8 +107,7 @@ function addCompetenceFromField() {
     newCompetence.value = {
         libelle_long: '',
         libelle_court: '',
-        coeff: 1,
-        statut: null
+        coeff: 1
     }
 }
 
@@ -130,11 +130,6 @@ function deleteCompetence(index: number) {
     store.state.competences.splice(index, 1)
 }
 
-// Fonction pour sauvegarder une compétence modifiée
-function saveCompetence(index: number) {
-    // La sauvegarde est automatique grâce à la réactivité du store
-    // Pas besoin de faire quoi que ce soit de plus
-}
 </script>
 
 <style scoped>
@@ -168,5 +163,16 @@ function saveCompetence(index: number) {
 .add-icon:hover {
     color: #2e7d32;
     cursor: pointer;
+}
+
+.close-btn {
+  background-color: rgba(255, 255, 255, 0.25); 
+  border-radius: 50%;
+  transition: background-color 0.2s ease;
+  margin-right: 4px; 
+}
+
+.close-btn:active {
+  background-color: rgba(255, 255, 255, 0.35);
 }
 </style>

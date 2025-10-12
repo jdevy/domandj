@@ -1,9 +1,21 @@
 <template>
   <v-dialog v-model="visible" max-width="700">
     <v-card>
-      <v-card-title class="text-h6 bg-primary text-white">
-        Gestion des classes
-      </v-card-title>
+<v-card-title
+  class="text-h6 bg-primary text-white d-flex align-center justify-space-between"
+>
+  <span>Gestion des groupes</span>
+
+  <v-btn
+    icon="mdi-close"
+    variant="text"
+    color="white"
+    size="small"
+    class="close-btn"
+    @click="visible = false"
+  />
+</v-card-title>
+
       <v-card-text class="bg-grey-lighten-4">
         <!-- Liste des classes -->
         <v-expansion-panels>
@@ -18,7 +30,7 @@
                 <!-- Élèves existants -->
                 <v-list-item v-for="(student, i) in students" :key="student.id">
                   <v-text-field v-model="student.name" placeholder="Nom de l'élève" variant="outlined" hide-details
-                    class="student-field" @blur="saveStudent(className, i)">
+                    class="student-field" >
                     <template #append>
                       <div class="student-action" @click="deleteStudent(className, i)">
                         <v-icon size="20" color="error">mdi-close</v-icon>
@@ -133,10 +145,7 @@ function addStudentFromField(className: string) {
   const newStudentId = Date.now()
   store.state.classes[className].push({
     id: newStudentId,
-    name: name,
-    x: 0,
-    y: 0,
-    plotId: null
+    name: name
   })
 
   newStudent.value[className] = ""
@@ -174,5 +183,16 @@ function addStudentFromField(className: string) {
 .add-icon:hover {
   color: #2e7d32;
   cursor: pointer;
+}
+
+.close-btn {
+  background-color: rgba(255, 255, 255, 0.25); 
+  border-radius: 50%;
+  transition: background-color 0.2s ease;
+  margin-right: 4px; 
+}
+
+.close-btn:active {
+  background-color: rgba(255, 255, 255, 0.35);
 }
 </style>

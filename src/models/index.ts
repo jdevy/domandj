@@ -3,9 +3,6 @@ export * from './konva'
 export interface Student {
   id: number
   name: string
-  x: number
-  y: number
-//  plotId: number | null
 }
 
 export interface Competence {

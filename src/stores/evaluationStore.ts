@@ -26,9 +26,7 @@ function loadInitialData() {
   Object.entries(classesData).forEach(([className, students]) => {
     state.classes[className] = students.map((student: any, index: number) => ({
       ...student,
-      id: student.id || Date.now() + index,
-      x: 0,
-      y: 0,
+      id: student.id || Date.now() + index
     }))
   })
 }
@@ -54,7 +52,6 @@ function loadState() {
             if (!existingStudentIds.has(savedStudent.id)) {
               state.classes[className].push({
                 ...savedStudent
-   //             plotId: undefined, // Suppression de plotId
               })
             }
           })
@@ -66,7 +63,6 @@ function loadState() {
       state.currentSessionId = parsed.currentSessionId || state.currentSessionId
       // Réconcilier les données
       reconcilePlotsAndStudents()
-      reassignStudentPositions()
     } catch (e) {
       console.error("Erreur de chargement de l'état", e)
       loadInitialData()
@@ -125,22 +121,6 @@ function reconcilePlotsAndStudents() {
       plot.students = plot.students.filter((studentId) =>
         classStudents.some((s) => s.id === studentId)
       )
-    })
-  })
-}
-
-// Réaffecte les positions X/Y des élèves sur les plots
-function reassignStudentPositions() {
-  state.sessions.forEach((session) => {
-    const classStudents = state.classes[session.className] || []
-    session.plotGroups.forEach((plot) => {
-      plot.students.forEach((studentId, idx) => {
-        const student = classStudents.find((s) => s.id === studentId)
-        if (student) {
-          student.x = plot.x + 10
-          student.y = plot.y + 40 + idx * 40
-        }
-      })
     })
   })
 }
