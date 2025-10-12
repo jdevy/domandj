@@ -53,16 +53,23 @@
             </v-btn>
           </template>
           <v-list density="compact">
+            <v-list-item @click="showSessionEditModal = true">
+              <v-list-item-title>
+                <v-icon>mdi-pencil</v-icon>
+                <span>&nbsp;&nbsp;Modifier la session</span>
+              </v-list-item-title>
+            </v-list-item>
             <v-list-item @click="resetClassData">
               <v-list-item-title>
                 <v-icon color="red">mdi-refresh</v-icon>
                 <span>&nbsp;&nbsp;Réinitialiser la session</span>
               </v-list-item-title>
             </v-list-item>
-            <v-list-item @click="showSessionEditModal = true">
+            <v-divider class="my-1"></v-divider>
+            <v-list-item @click="deleteCurrentSession">
               <v-list-item-title>
-                <v-icon>mdi-pencil</v-icon>
-                <span>&nbsp;&nbsp;Modifier la session</span>
+                <v-icon color="red">mdi-delete</v-icon>
+                <span>&nbsp;&nbsp;Supprimer la session</span>
               </v-list-item-title>
             </v-list-item>
             <v-divider class="my-1"></v-divider>
@@ -75,6 +82,12 @@
             <v-list-item @click="showLogsModal = true">
               <v-icon color="blue-grey-darken-2">mdi-file-code</v-icon>
               <span>&nbsp;&nbsp;Logs store</span>
+            </v-list-item>
+            <v-divider class="my-1"></v-divider>
+            <v-divider class="my-1"></v-divider>
+            <v-list-item @click="resetAllData">
+              <v-icon color="error">mdi-alert</v-icon>
+              <span>&nbsp;&nbsp;Réinitialiser l'application</span>
             </v-list-item>
           </v-list>
         </v-menu>
@@ -184,7 +197,8 @@ const hasClasses = computed(() => Object.keys(store.state.classes).length > 0)
 const formattedStoreState = computed(() => {
   try {
     return JSON.stringify(store.state, null, 2)
-  } catch (e) {
+  } catch (e) {variant="tonal"
+
     return "Erreur lors de la sérialisation du store"
   }
 })
@@ -248,6 +262,34 @@ function resetClassData() {
   store.resumeAutoSave()
 }
 
+function deleteCurrentSession() {
+  const session = store.getCurrentSession()
+  if (!session) return
+  if (!confirm(`Voulez-vous vraiment supprimer la session "${session.name}" ?`)) return
+
+  // Supprimer la session du store
+  store.state.sessions = store.state.sessions.filter(s => s.id !== session.id)
+
+  // Si c’était la session courante, réinitialiser currentSessionId
+  if (store.state.currentSessionId === session.id) {
+    store.state.currentSessionId = store.state.sessions[0]?.id || null
+  }
+}
+
+function resetAllData() {
+  if (!confirm("⚠️ Cette action va supprimer TOUTES les données : classes, sessions et compétences. Continuer ?")) return
+  store.state.classes = {}
+  store.state.competences = []
+  store.state.sessions = []
+  store.state.currentSessionId = null
+
+  // Si tu veux vider aussi le localStorage persistant
+  localStorage.clear()
+
+  alert("Toutes les données ont été supprimées.")
+  location.reload()
+}
+
 function triggerToast(message: string) {
   toastMessage.value = message
   showToast.value = true
@@ -281,7 +323,7 @@ onMounted(() => {
     // Créer une session par défaut si aucune n'existe
     const firstClass = Object.keys(store.state.classes)[0]
     store.createSession({
-      name: `Séance initiale - ${firstClass}`,
+      name: `Séance initiale`,
       className: firstClass,
       selectedCompetenceIds: store.state.competences.map(c => c.id)
     })
