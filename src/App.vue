@@ -197,13 +197,12 @@ const hasClasses = computed(() => Object.keys(store.state.classes).length > 0)
 const formattedStoreState = computed(() => {
   try {
     return JSON.stringify(store.state, null, 2)
-  } catch (e) {variant="tonal"
-
+  } catch (e) {
     return "Erreur lors de la sérialisation du store"
   }
 })
 
-// Méthodes
+// Méthodes 
 function createNewSession(sessionData: {
   className: string,
   sessionName: string,
