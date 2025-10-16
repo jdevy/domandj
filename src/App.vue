@@ -56,20 +56,13 @@
             <v-list-item @click="showSessionEditModal = true">
               <v-list-item-title>
                 <v-icon>mdi-pencil</v-icon>
-                <span>&nbsp;&nbsp;Modifier la session</span>
+                <span style="color: gray;">&nbsp;&nbsp;(Modifier la session)</span>
               </v-list-item-title>
             </v-list-item>
-            <v-list-item @click="resetClassData">
+            <v-list-item @click="showReportModal = true">
               <v-list-item-title>
-                <v-icon color="red">mdi-refresh</v-icon>
-                <span>&nbsp;&nbsp;Réinitialiser la session</span>
-              </v-list-item-title>
-            </v-list-item>
-            <v-divider class="my-1"></v-divider>
-            <v-list-item @click="deleteCurrentSession">
-              <v-list-item-title>
-                <v-icon color="red">mdi-delete</v-icon>
-                <span>&nbsp;&nbsp;Supprimer la session</span>
+                <v-icon color="green">mdi-table</v-icon>
+                <span>&nbsp;&nbsp;Voir le rapport</span>
               </v-list-item-title>
             </v-list-item>
             <v-divider class="my-1"></v-divider>
@@ -84,6 +77,20 @@
               <span>&nbsp;&nbsp;Logs store</span>
             </v-list-item>
             <v-divider class="my-1"></v-divider>
+            <v-list-item @click="resetClassData">
+              <v-list-item-title>
+                <v-icon color="red">mdi-refresh</v-icon>
+                <span>&nbsp;&nbsp;Réinitialiser la session</span>
+              </v-list-item-title>
+            </v-list-item>
+            <v-divider class="my-1"></v-divider>
+            <v-list-item @click="deleteCurrentSession">
+              <v-list-item-title>
+                <v-icon color="red">mdi-delete</v-icon>
+                <span>&nbsp;&nbsp;Supprimer la session</span>
+              </v-list-item-title>
+            </v-list-item>
+            <v-divider class="my-1"></v-divider>
             <v-divider class="my-1"></v-divider>
             <v-list-item @click="resetAllData">
               <v-icon color="error">mdi-alert</v-icon>
@@ -92,12 +99,8 @@
           </v-list>
         </v-menu>
       </div>
-      <Konvaboard
-        :stage-size="stageSize"
-        :avatar-image="avatarImage"
-        @delete-plot="deletePlot"
-        @open-evaluation="openEvaluation"
-      />
+      <Konvaboard :stage-size="stageSize" :avatar-image="avatarImage" @delete-plot="deletePlot"
+        @open-evaluation="openEvaluation" />
       <button class="round-icon-btn plus-btn bottom-left" @click="addPlot">
         <LucidePlus size="24" />
       </button>
@@ -105,22 +108,15 @@
         <LucideTrash size="24" />
       </div>
     </div>
-    <Evaluation
-      v-if="showEvalModal && currentPlot"
-      v-model:plot-value="currentPlot"
-      :visible="showEvalModal"
-      @close="showEvalModal = false"
-    />
+    <Evaluation v-if="showEvalModal && currentPlot" v-model:plot-value="currentPlot" :visible="showEvalModal"
+      @close="showEvalModal = false" />
     <div v-if="showToast" class="toast-message">
       {{ toastMessage }}
     </div>
     <ClasseManager v-model:visible="showClasseModal" />
-    <NewSessionModal
-      v-model:visible="showNewSessionModal"
-      :classes="Object.keys(store.state.classes)"
-      :competences="store.state.competences"
-      @create="createNewSession"
-    />
+    <EvaluationReport v-model="showReportModal" />
+    <NewSessionModal v-model:visible="showNewSessionModal" :classes="Object.keys(store.state.classes)"
+      :competences="store.state.competences" @create="createNewSession" />
     <CompetenceManager v-model:visible="showCompetenceModal" />
     <v-dialog v-model="showLogsModal" max-width="800px">
       <v-card>
@@ -135,8 +131,8 @@
         </v-card-actions>
         <v-card-text>
           <pre class="store-json">
-            {{ formattedStoreState }}
-          </pre>
+        {{ formattedStoreState }}
+      </pre>
         </v-card-text>
         <v-card-actions class="justify-end">
           <v-btn text color="primary" @click="showLogsModal = false">Fermer</v-btn>
@@ -157,6 +153,7 @@ import Evaluation from './components/Evaluation.vue'
 import ClasseManager from './components/ClasseManager.vue'
 import NewSessionModal from './components/NewSessionModal.vue'
 import CompetenceManager from '@/components/CompetenceManager.vue'
+import EvaluationReport from '@/components/EvaluationReport.vue'
 import { logStoreState } from '@/utils/logStore'
 import type { Plot, Student } from '@/models'
 
@@ -173,6 +170,7 @@ const showClasseModal = ref(false)
 const showCompetenceModal = ref(false)
 const currentPlot = ref<Plot | null>(null)
 const showToast = ref(false)
+const showReportModal = ref(false)
 const toastMessage = ref('')
 const showNewSessionModal = ref(false)
 const showLogsModal = ref(false)
@@ -357,9 +355,11 @@ function copyStoreToClipboard() {
   align-items: center;
   padding: 0 16px;
 }
+
 .reset-button {
   margin-left: auto;
 }
+
 .store-json {
   max-height: 70vh;
   overflow-y: auto;

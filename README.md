@@ -6,5 +6,6 @@ Learn more about IDE Support for Vue in the [Vue Docs Scaling up Guide](https://
 
 # 
 application vuejs 3 avec librairies vite konva pwa
-repartit des élèves d'une classe sur des plots pour faire des travaux pratiques, et fait une évaluation de compétences pour chaque groupe
+repartit des élèves d'une classe sur des plots pour faire des travaux pratiques, et fait une évaluation de compétences pour chaque groupe. 
+Code source dans le depot https://github.com/jdevy/domandj 
 # 
