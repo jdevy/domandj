@@ -87,16 +87,25 @@ function handleEvaluationClick(plot: Plot, evt: any) {
   emit('open-evaluation', { ...plot })
 }
 
+const plotZones = computed(() => {
+  if (!currentSession.value) return [];
+  return currentSession.value.plotGroups.map(p => ({
+    id: p.id,
+    left: p.x,
+    right: p.x + 130,
+    top: p.y,
+    bottom: p.y + 130,
+  }));
+});
 function getPlotUnderStudent(pos: Position): Plot | null {
-  if (!currentSession.value) return null
-  const width = 40
-  const height = 40
-  const centerX = pos.x + width / 2
-  const centerY = pos.y + height / 2
-  return currentSession.value.plotGroups.find(p =>
-    centerX >= p.x && centerX <= p.x + 130 &&
-    centerY >= p.y && centerY <= p.y + 130
-  ) || null
+  if (!currentSession.value) return null;
+  const centerX = pos.x + 20; // Moitié de la largeur d'un élève
+  const centerY = pos.y + 20; // Moitié de la hauteur d'un élève
+  const zone = plotZones.value.find(z =>
+    centerX >= z.left && centerX <= z.right &&
+    centerY >= z.top && centerY <= z.bottom
+  );
+  return zone ? currentSession.value!.plotGroups.find(p => p.id === zone.id) || null : null;
 }
 
 function highlightPlotUnder(student: Student, event: DragKonvaEvent) {
