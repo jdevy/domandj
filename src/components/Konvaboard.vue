@@ -3,18 +3,13 @@
     <v-stage :config="stageSize">
       <v-layer>
         <!-- Plots -->
-        <v-group v-for="plot in currentSession?.plotGroups" :key="plot.id" :config="{
-          x: plot.x,
-          y: plot.y,
-          draggable: true,
-          dragBoundFunc: limitPlotToBounds
-        }" @dragmove="updatePlotPosition(plot, $event)" @dragend="updatePlotPosition(plot, $event)">
-          <v-rect :config="getPlotRectStyle(plot, highlightedPlotId === plot.id, plotBeingDeletedId === plot.id)" />
-          <v-text :config="{ text: plot.name, ...getPlotTextStyle(plot) }" />
-          <!-- Bouton Évaluation -->
-          <template v-if="hasStudentsInPlot(plot)">
+        <v-group v-for="plot in plotConfigs" :key="plot.id" :config="plot.config"
+          @dragmove="updatePlotPositionById(plot.id, $event)" @dragend="updatePlotPositionById(plot.id, $event)">
+          <v-rect :config="plot.rectStyle" />
+          <v-text :config="plot.textStyle" :listening="false" />
+          <template v-if="plot.hasStudents">
             <v-group :config="{ ...defaultGroupPosition(110, 100), listening: true }"
-              @pointerdown="handleEvaluationClick(plot, $event)">
+              @pointerdown="handleEvaluationClickById(plot.id, $event)">
               <v-rect :config="{ x: 0, y: 0, width: 50, height: 50, fill: 'transparent' }" />
               <v-rect :config="evaluationButtonRect" />
               <v-text :config="evaluationButtonText" />
@@ -22,12 +17,11 @@
           </template>
         </v-group>
 
+
+
         <!-- Élèves -->
-        <v-group v-for="(student, index) in currentStudents" :key="`${student.id}-${currentSession?.id}`" :config="{
-          ...(studentPositions[student.id] || getStudentPosition(student, index)),
-          draggable: true,
-          dragBoundFunc: limitStudentToBounds
-        }" @dragmove="highlightPlotUnder(student, $event)" @dragend="updateStudentPosition(student, $event)">
+        <v-group v-for="student in studentConfigs" :key="`${student.id}-${currentSession?.id}`" :config="student.config"
+          @dragmove="highlightPlotUnder($event)" @dragend="updateStudentPositionById(student.id, $event)">
           <v-image v-if="avatarImage" :config="getStudentAvatarStyle(avatarImage)" />
           <v-group>
             <v-rect :config="getStudentLabelRectStyle()" />
@@ -53,7 +47,6 @@ import {
   getStudentLabelTextStyle
 } from '@/styles/konvaStyles'
 import { useEvaluationStore } from '@/stores/evaluationStore'
-import { debounce } from 'lodash'
 
 // Props
 const props = defineProps({
@@ -77,6 +70,53 @@ const currentStudents = computed(() => {
   return store.state.classes[currentSession.value.className] || []
 })
 
+const plotConfigs = computed(() => {
+  if (!currentSession.value) return []
+  return currentSession.value.plotGroups.map(plot => ({
+    id: plot.id,
+    config: {
+      x: plot.x,
+      y: plot.y,
+      draggable: true,
+      dragBoundFunc: limitPlotToBounds
+    },
+    rectStyle: getPlotRectStyle(plot, highlightedPlotId.value === plot.id, plotBeingDeletedId.value === plot.id),
+    textStyle: { text: plot.name, ...getPlotTextStyle(plot) },
+    hasStudents: hasStudentsInPlot(plot)
+  }))
+})
+
+const studentConfigs = computed(() => {
+  return currentStudents.value.map((student, index) => {
+    const pos = studentPositions.value[student.id] || getStudentPosition(student, index)
+    return {
+      id: student.id,
+      config: {
+        ...pos,
+        draggable: true,
+        dragBoundFunc: limitStudentToBounds
+      },
+      name: student.name
+    }
+  })
+})
+function updatePlotPositionById(plotId: number, event: DragKonvaEvent) {
+  const plot = currentSession.value?.plotGroups.find(p => p.id === plotId)
+  if (!plot) return
+  updatePlotPosition(plot, event)
+}
+
+function handleEvaluationClickById(plotId: number, event: any) {
+  const plot = currentSession.value?.plotGroups.find(p => p.id === plotId)
+  if (!plot) return
+  handleEvaluationClick(plot, event)
+}
+
+function updateStudentPositionById(studentId: number, event: DragKonvaEvent) {
+  const student = currentStudents.value.find(s => s.id === studentId)
+  if (!student) return
+  updateStudentPosition(student, event)
+}
 // --- Méthodes utilitaires ---
 function hasStudentsInPlot(plot: Plot): boolean {
   return plot.students.length > 0
@@ -108,10 +148,13 @@ function getPlotUnderStudent(pos: Position): Plot | null {
   return zone ? currentSession.value!.plotGroups.find(p => p.id === zone.id) || null : null;
 }
 
-function highlightPlotUnder(student: Student, event: DragKonvaEvent) {
+function highlightPlotUnder(event: DragKonvaEvent) {
+  if (event.type !== 'dragmove') return;
+
   const pos = event.target.getAbsolutePosition()
   const plot = getPlotUnderStudent(pos)
   const newId = plot ? plot.id : null
+
   if (newId !== lastHighlightedId) {
     highlightedPlotId.value = newId
     lastHighlightedId = newId
@@ -144,25 +187,38 @@ function updatePlotPosition(plot: Plot, event: DragKonvaEvent) {
 }
 
 // --- Gestion du drag des élèves ---
-const updateStudentPosition = debounce((student: Student, event: DragKonvaEvent) => {
+function updateStudentPosition(student: Student, event: DragKonvaEvent) {
+  if (event.type !== 'dragend') return // Ne fait rien pendant le mouvement
+
   const pos = event.target.getAbsolutePosition()
   if (!pos) return
   const session = store.getCurrentSession()
   if (!session) return
 
-  const plot = getPlotUnderStudent(pos)
-  if (plot) {
-    store.moveStudentToPlot(session.id, student.id, plot.id)
-  } else {
-    // Retirer l'élève de tous les plots de la session courante
-    session.plotGroups.forEach(p => {
-      if (p.students.includes(student.id)) {
-        store.removeStudentFromPlot(session.id, student.id, p.id)
-      }
-    })
+  // Plot sous la position actuelle du student
+  const newPlot = getPlotUnderStudent(pos)
+  // Plot actuel dans lequel l’élève se trouve déjà (si existant)
+  const currentPlot = session.plotGroups.find(p => p.students.includes(student.id))
+
+  // Si rien n’a changé → on ne fait rien
+  if (newPlot?.id === currentPlot?.id) {
+    highlightedPlotId.value = null
+    return
   }
+
+  // S’il était déjà sur un plot → on le retire
+  if (currentPlot) {
+    store.removeStudentFromPlot(session.id, student.id, currentPlot.id)
+  }
+
+  // S’il est maintenant sur un nouveau plot → on l’ajoute
+  if (newPlot) {
+    store.moveStudentToPlot(session.id, student.id, newPlot.id)
+  }
+
   highlightedPlotId.value = null
-}, 80)
+}
+
 
 // --- Limites pour les plots et élèves ---
 function limitPlotToBounds(pos: Position): Position {
@@ -191,15 +247,18 @@ const studentPositions = computed(() => {
 
   const positions: Record<number, { x: number; y: number }> = {}
 
-  for (const plot of session.plotGroups) {
+  session.plotGroups.forEach(plot => {
     plot.students.forEach((studentId, index) => {
-      positions[studentId] = {
-        x: plot.x + 10,
-        y: plot.y + 40 + index * 40 
+      // Vérifie si la position a déjà été calculée (évite les doublons)
+      if (!positions[studentId]) {
+        positions[studentId] = {
+          x: plot.x + 10,
+          y: plot.y + 40 + index * 40
+        };
       }
-    })
-  }
-  return positions
+    });
+  });
+  return positions;
 })
 
 function getStudentPosition(student: Student, index: number): Position {
@@ -222,23 +281,6 @@ function getStudentPosition(student: Student, index: number): Position {
   return { x: baseX, y: 60 + posIndex * 60 }
 }
 
-
-// --- Indicateur d'évaluation ---
-function getEvaluationIndicatorConfig(plot: Plot) {
-  const evaluations = plot.evaluations || {}
-  const total = Object.keys(evaluations).length
-  if (!total) return { x: 0, y: 0, width: 0, height: 0 }
-  const trueCount = Object.values(evaluations).filter(v => v === true).length
-  const ratio = trueCount / total
-  return {
-    x: plot.x + 10,
-    y: plot.y + 10,
-    width: 20,
-    height: 20,
-    fill: ratio > 0.66 ? '#4CAF50' : ratio > 0.33 ? '#FFC107' : '#F44336',
-    cornerRadius: 5
-  }
-}
 </script>
 
 <style scoped>
@@ -258,5 +300,6 @@ function getEvaluationIndicatorConfig(plot: Plot) {
 
 .konva-container canvas {
   touch-action: manipulation;
+  will-change: transform;
 }
 </style>
