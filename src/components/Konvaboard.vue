@@ -17,8 +17,6 @@
           </template>
         </v-group>
 
-
-
         <!-- Élèves -->
         <v-group v-for="student in studentConfigs" :key="`${student.id}-${currentSession?.id}`" :config="student.config"
           @dragmove="highlightPlotUnder($event)" @dragend="updateStudentPositionById(student.id, $event)">
@@ -34,7 +32,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, shallowRef, watchEffect, watch, nextTick } from 'vue'
 import type { Plot, Student, DragKonvaEvent, Position } from '@/models'
 import {
   evaluationButtonRect,
@@ -54,6 +52,11 @@ const props = defineProps({
   avatarImage: { type: Object as () => HTMLImageElement | null, required: false }
 })
 
+//-- [OPTIMISATION 1: pré-calcul des seuils pour la zone de suppression]
+const DELETE_MARGIN = 80
+const thresholdX = props.stageSize.width - DELETE_MARGIN
+const thresholdY = props.stageSize.height - DELETE_MARGIN
+
 // Événements
 const emit = defineEmits(['delete-plot', 'open-evaluation'])
 
@@ -63,12 +66,81 @@ const plotBeingDeletedId = ref<number | null>(null)
 const store = useEvaluationStore()
 let lastHighlightedId: number | null = null
 
-// Store helpers
-const currentSession = computed(() => store.getCurrentSession())
+//-- [OPTIMISATION 2: shallowRef pour éviter la réactivité profonde du store]
+const currentSession = shallowRef(store.getCurrentSession())
+const stageRef = ref<any>(null)
+
+watchEffect(() => {
+  currentSession.value = store.getCurrentSession()
+})
+
+// Élèves de la classe courante
 const currentStudents = computed(() => {
   if (!currentSession.value) return []
   return store.state.classes[currentSession.value.className] || []
 })
+
+//-- [OPTIMISATION 3: positions locales des élèves (ref, pas computed)]
+const studentPositions = ref<Record<number, Position>>({})
+
+//-- [OPTIMISATION 4: recalcul dynamique des élèves sur la touche]
+function recalcUnassignedPositions() {
+  const session = currentSession.value
+  if (!session) return
+
+  const allStudents = currentStudents.value
+  const unassigned = allStudents.filter(
+    s => !session.plotGroups.some(p => p.students.includes(s.id))
+  )
+
+  const margin = 20
+  const baseX = Math.max(props.stageSize.width - 100 - margin, margin)
+
+  unassigned.forEach((student, index) => {
+    studentPositions.value[student.id] = {
+      x: baseX,
+      y: 60 + index * 60
+    }
+  })
+}
+
+//-- [OPTIMISATION 5: recalcul complet des positions quand la session change]
+function rebuildAllStudentPositions() {
+  const session = currentSession.value
+  if (!session) return
+
+  const positions: Record<number, { x: number; y: number }> = {}
+
+  // Élèves assignés à un plot
+  session.plotGroups.forEach(plot => {
+    plot.students.forEach((studentId, index) => {
+      positions[studentId] = {
+        x: plot.x + 10,
+        y: plot.y + 40 + index * 40
+      }
+    })
+  })
+
+  studentPositions.value = positions
+
+  // Ajoute les élèves sur la touche
+  recalcUnassignedPositions()
+}
+
+// Watch pour reconstruire les positions après changement de session
+watch(currentSession, async () => {
+  await nextTick() // attendre que les plots soient rendus
+  rebuildAllStudentPositions()
+
+  // 🔄 forcer le rafraîchissement du stage Konva
+  if (stageRef.value?.getNode) {
+    const stage = stageRef.value.getNode()
+    stage?.draw()
+  }
+})
+//---------------------------------------------
+//-------------- CONFIGS RENDU ----------------
+//---------------------------------------------
 
 const plotConfigs = computed(() => {
   if (!currentSession.value) return []
@@ -80,8 +152,11 @@ const plotConfigs = computed(() => {
       draggable: true,
       dragBoundFunc: limitPlotToBounds
     },
-    rectStyle: getPlotRectStyle(plot, highlightedPlotId.value === plot.id, plotBeingDeletedId.value === plot.id),
-    textStyle: { text: plot.name, ...getPlotTextStyle(plot) },
+    rectStyle: getPlotRectStyle(
+      highlightedPlotId.value === plot.id,
+      plotBeingDeletedId.value === plot.id
+    ),
+    textStyle: { text: plot.name, ...getPlotTextStyle() },
     hasStudents: hasStudentsInPlot(plot)
   }))
 })
@@ -100,6 +175,11 @@ const studentConfigs = computed(() => {
     }
   })
 })
+
+//---------------------------------------------
+//-------------- MÉTHODES ---------------------
+//---------------------------------------------
+
 function updatePlotPositionById(plotId: number, event: DragKonvaEvent) {
   const plot = currentSession.value?.plotGroups.find(p => p.id === plotId)
   if (!plot) return
@@ -117,6 +197,7 @@ function updateStudentPositionById(studentId: number, event: DragKonvaEvent) {
   if (!student) return
   updateStudentPosition(student, event)
 }
+
 // --- Méthodes utilitaires ---
 function hasStudentsInPlot(plot: Plot): boolean {
   return plot.students.length > 0
@@ -127,30 +208,39 @@ function handleEvaluationClick(plot: Plot, evt: any) {
   emit('open-evaluation', { ...plot })
 }
 
+//---------------------------------------------
+//---------- DÉTECTION DE ZONE DE PLOT --------
+//---------------------------------------------
+
 const plotZones = computed(() => {
-  if (!currentSession.value) return [];
+  if (!currentSession.value) return []
   return currentSession.value.plotGroups.map(p => ({
     id: p.id,
     left: p.x,
     right: p.x + 130,
     top: p.y,
-    bottom: p.y + 130,
-  }));
-});
+    bottom: p.y + 130
+  }))
+})
+
 function getPlotUnderStudent(pos: Position): Plot | null {
-  if (!currentSession.value) return null;
-  const centerX = pos.x + 20; // Moitié de la largeur d'un élève
-  const centerY = pos.y + 20; // Moitié de la hauteur d'un élève
-  const zone = plotZones.value.find(z =>
-    centerX >= z.left && centerX <= z.right &&
-    centerY >= z.top && centerY <= z.bottom
-  );
-  return zone ? currentSession.value!.plotGroups.find(p => p.id === zone.id) || null : null;
+  if (!currentSession.value) return null
+  const centerX = pos.x + 20
+  const centerY = pos.y + 20
+  const zone = plotZones.value.find(
+    z =>
+      centerX >= z.left &&
+      centerX <= z.right &&
+      centerY >= z.top &&
+      centerY <= z.bottom
+  )
+  return zone
+    ? currentSession.value!.plotGroups.find(p => p.id === zone.id) || null
+    : null
 }
 
 function highlightPlotUnder(event: DragKonvaEvent) {
-  if (event.type !== 'dragmove') return;
-
+  if (event.type !== 'dragmove') return
   const pos = event.target.getAbsolutePosition()
   const plot = getPlotUnderStudent(pos)
   const newId = plot ? plot.id : null
@@ -161,66 +251,90 @@ function highlightPlotUnder(event: DragKonvaEvent) {
   }
 }
 
-// --- Gestion du drag des plots ---
+//---------------------------------------------
+//---------- DRAG DES PLOTS -------------------
+//---------------------------------------------
+
 function updatePlotPosition(plot: Plot, event: DragKonvaEvent) {
   const pos = event.target.position()
   plot.x = pos.x
   plot.y = pos.y
+
   const stage = event.target.getStage()
   const pointer = stage?.getPointerPosition()
   if (!pointer) return
-  const margin = 80
-  const thresholdX = props.stageSize.width - margin
-  const thresholdY = props.stageSize.height - margin
+
   const isOverDeleteZone = pointer.x >= thresholdX && pointer.y >= thresholdY
-  plotBeingDeletedId.value = isOverDeleteZone ? plot.id : (plotBeingDeletedId.value === plot.id ? null : plotBeingDeletedId.value)
+  plotBeingDeletedId.value = isOverDeleteZone
+    ? plot.id
+    : plotBeingDeletedId.value === plot.id
+    ? null
+    : plotBeingDeletedId.value
 
   if (event.type === 'dragend' && isOverDeleteZone) {
     const plotHasStudents = plot.students.length > 0
     if (!plotHasStudents) {
       emit('delete-plot', plot.id)
     } else {
-      alert("Ce plot contient des élèves. Vous devez les retirer avant de supprimer.")
+      alert('Ce plot contient des élèves. Vous devez les retirer avant de supprimer.')
     }
     plotBeingDeletedId.value = null
   }
+
+  //-- [OPTIMISATION 6: recalcul local des élèves sur le plot déplacé]
+  if (event.type === 'dragend') {
+    nextTick(() => updateStudentPositionsForPlot(plot))
+  }
 }
 
-// --- Gestion du drag des élèves ---
-function updateStudentPosition(student: Student, event: DragKonvaEvent) {
-  if (event.type !== 'dragend') return // Ne fait rien pendant le mouvement
+// Recalcule uniquement les positions des élèves sur un plot déplacé
+function updateStudentPositionsForPlot(plot: Plot) {
+  plot.students.forEach((studentId, index) => {
+    studentPositions.value[studentId] = {
+      x: plot.x + 10,
+      y: plot.y + 40 + index * 40
+    }
+  })
+}
 
+//---------------------------------------------
+//---------- DRAG DES ÉLÈVES ------------------
+//---------------------------------------------
+
+function updateStudentPosition(student: Student, event: DragKonvaEvent) {
+  if (event.type !== 'dragend') return
   const pos = event.target.getAbsolutePosition()
   if (!pos) return
   const session = store.getCurrentSession()
   if (!session) return
 
-  // Plot sous la position actuelle du student
   const newPlot = getPlotUnderStudent(pos)
-  // Plot actuel dans lequel l’élève se trouve déjà (si existant)
   const currentPlot = session.plotGroups.find(p => p.students.includes(student.id))
 
-  // Si rien n’a changé → on ne fait rien
   if (newPlot?.id === currentPlot?.id) {
     highlightedPlotId.value = null
     return
   }
 
-  // S’il était déjà sur un plot → on le retire
   if (currentPlot) {
     store.removeStudentFromPlot(session.id, student.id, currentPlot.id)
   }
 
-  // S’il est maintenant sur un nouveau plot → on l’ajoute
   if (newPlot) {
     store.moveStudentToPlot(session.id, student.id, newPlot.id)
+    nextTick(() => updateStudentPositionsForPlot(newPlot))
   }
+
+  // 🔁 Recalcule les élèves sur la touche
+  nextTick(() => recalcUnassignedPositions())
 
   highlightedPlotId.value = null
 }
 
+//---------------------------------------------
+//---------- LIMITES DU DRAG ------------------
+//---------------------------------------------
 
-// --- Limites pour les plots et élèves ---
 function limitPlotToBounds(pos: Position): Position {
   const plotWidth = 130
   const plotHeight = 130
@@ -240,36 +354,17 @@ function limitStudentToBounds(pos: Position): Position {
   }
 }
 
-// --- Calcul de position des élèves ---
-const studentPositions = computed(() => {
-  const session = currentSession.value
-  if (!session) return {}
-
-  const positions: Record<number, { x: number; y: number }> = {}
-
-  session.plotGroups.forEach(plot => {
-    plot.students.forEach((studentId, index) => {
-      // Vérifie si la position a déjà été calculée (évite les doublons)
-      if (!positions[studentId]) {
-        positions[studentId] = {
-          x: plot.x + 10,
-          y: plot.y + 40 + index * 40
-        };
-      }
-    });
-  });
-  return positions;
-})
+//---------------------------------------------
+//---------- POSITION INIT DES ÉLÈVES ---------
+//---------------------------------------------
 
 function getStudentPosition(student: Student, index: number): Position {
-  // Si la position est déjà calculée dans le computed (élève assigné à un plot)
   const position = studentPositions.value[student.id]
   if (position) return position
 
-  // Élève non assigné à un plot → on les range à droite de la scène
   const session = currentSession.value
-  const unassigned = currentStudents.value.filter(s =>
-    !session?.plotGroups.some(p => p.students.includes(s.id))
+  const unassigned = currentStudents.value.filter(
+    s => !session?.plotGroups.some(p => p.students.includes(s.id))
   )
 
   const i = unassigned.findIndex(s => s.id === student.id)
@@ -280,8 +375,8 @@ function getStudentPosition(student: Student, index: number): Position {
 
   return { x: baseX, y: 60 + posIndex * 60 }
 }
-
 </script>
+
 
 <style scoped>
 .stage-wrapper {

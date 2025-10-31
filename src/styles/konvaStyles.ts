@@ -45,7 +45,7 @@ export function defaultGroupPosition(x: number, y: number): GroupConfig {
 }
 
 // Styles des plots
-export function getPlotRectStyle(plot: Plot, isHighlighted: boolean, isBeingDeleted: boolean): RectConfig {
+export function getPlotRectStyle(isHighlighted: boolean, isBeingDeleted: boolean): RectConfig {
   return {
     width: 130,
     height: 130,
@@ -60,7 +60,7 @@ export function getPlotRectStyle(plot: Plot, isHighlighted: boolean, isBeingDele
   }
 }
 
-export function getPlotTextStyle(plot: Plot): TextConfig {
+export function getPlotTextStyle(): TextConfig {
   return {
     fontSize: 14,
     x: 85,

@@ -81,16 +81,6 @@ const sessionName = ref('')
 const selectedClass = ref(0)
 const selectedCompetenceIds = ref<number[]>([])
 
-// Sélectionner toutes les compétences par défaut
-// watch(
-//   () => props.competences,
-//   (newCompetences) => {
-//     if (newCompetences) {
-//       selectedCompetenceIds.value = newCompetences.map((c) => c.id)
-//     }
-//   },
-//   { immediate: true }
-// )
 watch(internalVisible, (visible) => {
   if (visible && props.competences) {
     selectedCompetenceIds.value = props.competences.map(c => c.id)

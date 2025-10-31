@@ -75,6 +75,7 @@ function loadState() {
 // Sauvegarde
 function saveState() {
   if (!autoSaveEnabled) return
+  console.log("---------------- save / OK / fait qu'une seule fois à la fin")
   localStorage.setItem(
     'evaluationAppState',
     JSON.stringify({
@@ -194,23 +195,17 @@ function deletePlot(sessionId: string, plotId: number) {
 function resetStudentPositions(className: string) {
   if (!state.classes[className]) return
   state.classes[className] = state.classes[className].map((student, index) => ({
-    ...student,
-    x: 800,
-    y: 50 + index * 40,
+    ...student
   }))
 }
 
-function loadStudentsForSession(sessionId: string, stageWidth: number, stageHeight: number) {
+function loadStudentsForSession(sessionId: string) {
   const session = state.sessions.find((s) => s.id === sessionId)
   if (!session) throw new Error('Session introuvable')
   const className = session.className
   const classStudents = state.classes[className] || []
-  const baseX = stageWidth - 130
-  const baseY = 50
   state.classes[className] = classStudents.map((student, index) => ({
-    ...student,
-    x: baseX,
-    y: baseY + index * 40,
+    ...student
   }))
 }
 

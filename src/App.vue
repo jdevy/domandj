@@ -238,7 +238,7 @@ function deletePlot(plotId: number) {
 function loadStudents() {
   const session = store.getCurrentSession()
   if (!session) throw new Error("Session introuvable")
-  store.loadStudentsForSession(session.id, stageSize.width, stageSize.height)
+  store.loadStudentsForSession(session.id)
 }
 
 function openEvaluation(plot: Plot): void {
